@@ -2139,6 +2139,11 @@ class Linear(Layer):
         row_norms = T.sqrt(sq_W.sum(axis=1))
         col_norms = T.sqrt(sq_W.sum(axis=0))
 
+        # added by XD
+        return OrderedDict([('col_norms_min',  col_norms.min()),
+                            ('col_norms_mean', col_norms.mean()),
+                            ('col_norms_max',  col_norms.max()), ])
+        
         rval = OrderedDict([('row_norms_min',  row_norms.min()),
                             ('row_norms_mean', row_norms.mean()),
                             ('row_norms_max',  row_norms.max()),

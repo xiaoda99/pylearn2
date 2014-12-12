@@ -24,6 +24,7 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
                  postdiv = 2,
                  tdiv = 2,
                  train_frame_size = (3,30,30),
+                 filter_frame_size = (1,30,30),
                  predict_frame_size = (1,1,1),
                  predict_interval = 2,
                  stride = (3,3),
@@ -37,12 +38,13 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
                  valid_slot=20,   # 2 hours
                  test_slot=30,   # 3 hours
                  predict_style='point',
-                 with_flow_feature=False
+                 track=True,
                  ):
 
         assert predict_style in ['interval', 'point']
         self.__dict__.update(locals())
         del self.self
+        print '\nBuilding', which_set, 'set...'
         
         self.image_border = (np.ceil(image_border[0]/prediv), 
                              np.ceil(image_border[1]/prediv))
@@ -68,11 +70,6 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         self.train_dim = self.train_frame_size[0]*\
                     (self.train_frame_size[1])/self.postdiv*\
                     (self.train_frame_size[2])/self.postdiv
-        if self.with_flow_feature:
-            self.flow_dim = 2* \
-                        (self.train_frame_size[1])/self.postdiv* \
-                        (self.train_frame_size[2])/self.postdiv
-            self.train_dim += self.flow_dim
         predict_len = self.predict_frame_size[0] if predict_style == 'point' else 1
         self.predict_dim = predict_len * \
                     (self.predict_frame_size[1]) * \
@@ -90,7 +87,6 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         view_converter = dense_design_matrix.DefaultViewConverter(shape, self.axes)
         super(CLOUDFLOW2,self).__init__(X = X, y = y, view_converter = view_converter)
         
-        self.example_cnt = 0
         data_dir = '/home/yuanxy/projects/nowcasting/data/'
         for month in range(len(data_files)):
             data_file = data_files[month]
@@ -170,9 +166,10 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
                 np.save(npy_flow_file, self.flow)
                 print 'done.'
                 
-            #self.gen_random_examples()
+        self.gen_random_examples()
         
         assert not np.any(np.isnan(self.X))
+        self.init_defaults()
         
     def init_slots(self):
         self.train_slot /= self.tdiv
@@ -199,16 +196,135 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         else:
             return False
             
-    def show_random_examples(self):
+    def init_defaults(self):
+        self.show_right = False
+        self.show_right_track = None
+        self.showdiv = 2
+        self.model_base = '/home/xd/projects/pylearn2/pylearn2/scripts/nowcasting/'
+        self.model_path = self.model_base + 'binary_skip2_3x24x24-200-1x1_best.pkl'
+        self.model_path_track = self.model_base + 'tracking_36m_3x24x24-200-1x1_best.pkl'
+        
+    def gen_random_examples(self):
+        print 'Generating random examples ...'
+        t0 = time.time()
+        
         h_center_low = self.train_frame_size[1]/2
         h_center_high = self.matrix.shape[2] - self.train_frame_size[1]/2
         
         w_center_low = self.train_frame_size[2]/2
         w_center_high = self.matrix.shape[3] - self.train_frame_size[2]/2
         
-        pred_func = self.build_pred_func(self.model_path)
+        track_frames = np.zeros(self.train_frame_size)
         
-        while True:
+        self.example_cnt = 0
+        for month in range(self.matrix.shape[0]):
+            print 'month', month
+            for i in range(self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1, 
+                            self.matrix.shape[1]):
+                if not self.usable(i):
+                    continue
+                
+                for _ in range(self.examples_per_image):
+                    h_center = np.random.randint(h_center_low, h_center_high)
+                    w_center = np.random.randint(w_center_low, w_center_high)
+                    predict_frame_center = train_frame_center = (h_center, w_center)    
+                    
+                    filter_frames = self.matrix[month,
+                                i-self.filter_frame_size[0]-self.predict_interval-self.predict_frame_size[0]+1:
+                                i-self.predict_interval-self.predict_frame_size[0]+1,
+                                train_frame_center[0]-self.filter_frame_size[1]/2:
+                                train_frame_center[0]+self.filter_frame_size[1]/2,
+                                train_frame_center[1]-self.filter_frame_size[2]/2:
+                                train_frame_center[1]+self.filter_frame_size[2]/2
+                            ].astype('float') 
+                    if np.sum(filter_frames >= self.threshold) < self.pixnum_threshold:
+                        continue
+        
+                    flow_frame = self.flow[month,
+                            i-self.predict_interval-self.predict_frame_size[0],
+                            train_frame_center[0]/self.postdiv - self.train_frame_size[1]/2/self.postdiv:
+                            train_frame_center[0]/self.postdiv + self.train_frame_size[1]/2/self.postdiv,
+                            train_frame_center[1]/self.postdiv - self.train_frame_size[2]/2/self.postdiv:
+                            train_frame_center[1]/self.postdiv + self.train_frame_size[2]/2/self.postdiv
+                        ]   
+                    
+                    flow_mean = flow_frame.mean(axis=(0,1))/10.
+                    flow_mean_norm = np.sum(flow_mean**2)**(1./2)
+                    
+                    dt = self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1 
+                    dx = flow_mean[1] * dt * self.tdiv / self.prediv
+                    dy = flow_mean[0] * dt * self.tdiv / self.prediv
+                    track_frame_center = (train_frame_center[0] - int(round(dx)), train_frame_center[1] - int(round(dy)))                
+                    if track_frame_center[0]-self.train_frame_size[1]/2 < 0 or \
+                            track_frame_center[0]+self.train_frame_size[1]/2 > self.matrix.shape[2] or \
+                            track_frame_center[1]-self.train_frame_size[2]/2 < 0 or \
+                            track_frame_center[1]+self.train_frame_size[2]/2 > self.matrix.shape[3]:
+                        continue
+                    
+                    if not self.track:
+                        flow_mean *= 0.0   # track_frame_center = train_frame_center
+                                
+                    for j in range(track_frames.shape[0]):
+                        dt = self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1 - j
+                        dx = flow_mean[1] * dt * self.tdiv / self.prediv
+                        dy = flow_mean[0] * dt * self.tdiv / self.prediv
+                        track_frame_center = (train_frame_center[0] - int(round(dx)), train_frame_center[1] - int(round(dy)))
+                        
+                        track_frames[j] = self.matrix[month,
+                                i-self.train_frame_size[0]-self.predict_interval-self.predict_frame_size[0]+1+j,
+                                track_frame_center[0]-self.train_frame_size[1]/2:
+                                track_frame_center[0]+self.train_frame_size[1]/2,
+                                track_frame_center[1]-self.train_frame_size[2]/2:
+                                track_frame_center[1]+self.train_frame_size[2]/2
+                            ].astype('float')   
+                    
+                    ds = cv2.resize(track_frames.transpose((1,2,0)), (0,0), fx=1./self.postdiv, fy=1./self.postdiv).transpose((2,0,1))
+                    x = ds.round().astype('uint8').flatten()
+                    self.X[self.example_cnt % self.num_examples] = x
+                    
+                    if self.predict_style == 'interval':
+                        rain = self.matrix[month, 
+                                       i-self.predict_frame_size[0]+1:i+1, 
+                                       predict_frame_center[0],
+                                       predict_frame_center[1]
+                                    ].max() >= self.threshold
+                        self.y[self.example_cnt % self.num_examples, 0] = rain
+                    else:
+                        for j in range(self.predict_frame_size[0]):
+                            rain = self.matrix[month,
+                                               i - self.predict_frame_size[0] + 1 + j, 
+                                               predict_frame_center[0], 
+                                               predict_frame_center[1]] >= self.threshold
+                            self.y[self.example_cnt % self.num_examples, j] = rain
+                    self.example_cnt += 1
+
+        t1 = time.time()
+        print 'Done. Total:', self.example_cnt, 'Time:', t1 - t0
+                
+    def show_random_examples(self):
+        h_center_low = self.train_frame_size[1]/2*self.showdiv
+        h_center_high = self.matrix.shape[2] - self.train_frame_size[1]/2*self.showdiv
+        
+        w_center_low = self.train_frame_size[2]/2*self.showdiv
+        w_center_high = self.matrix.shape[3] - self.train_frame_size[2]/2*self.showdiv
+        
+        pred_func, pred_func_track = self.build_pred_func()
+        
+        track_frames = np.zeros(self.train_frame_size)
+        future_track_frames = np.zeros((self.predict_interval + self.predict_frame_size[0],
+                                 self.train_frame_size[1],
+                                 self.train_frame_size[2]))        
+#        track_frames = np.zeros((self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0],
+#                                 self.train_frame_size[1],
+#                                 self.train_frame_size[2]))
+        track_frames_ds = np.zeros_like(track_frames)
+        future_track_frames_ds = np.zeros_like(future_track_frames)
+        
+        nrights = 0
+        nrights_track = 0
+        nrights_flow = 0
+        nexamples = 0
+        while nexamples < 100000:
             month = np.random.randint(self.matrix.shape[0])
             i = np.random.randint(self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1, 
                                   self.matrix.shape[1])
@@ -218,6 +334,27 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
             h_center = np.random.randint(h_center_low, h_center_high)
             w_center = np.random.randint(w_center_low, w_center_high)
             predict_frame_center = train_frame_center = (h_center, w_center)
+            
+            flow_frame = self.flow[month,
+                    i-self.predict_interval-self.predict_frame_size[0],
+                    train_frame_center[0]/self.postdiv - self.train_frame_size[1]/2/self.postdiv:
+                    train_frame_center[0]/self.postdiv + self.train_frame_size[1]/2/self.postdiv,
+                    train_frame_center[1]/self.postdiv - self.train_frame_size[2]/2/self.postdiv:
+                    train_frame_center[1]/self.postdiv + self.train_frame_size[2]/2/self.postdiv
+                ]   
+            
+            flow_mean = flow_frame.mean(axis=(0,1))/10.
+            flow_mean_norm = np.sum(flow_mean**2)**(1./2)
+            
+            dt = self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1 
+            dx = flow_mean[1] * dt * self.tdiv / self.prediv
+            dy = flow_mean[0] * dt * self.tdiv / self.prediv
+            track_frame_center = (train_frame_center[0] - int(round(dx)), train_frame_center[1] - int(round(dy)))                
+            if track_frame_center[0]-self.train_frame_size[1]/2 < 0 or \
+                    track_frame_center[0]+self.train_frame_size[1]/2 > self.matrix.shape[2] or \
+                    track_frame_center[1]-self.train_frame_size[2]/2 < 0 or \
+                    track_frame_center[1]+self.train_frame_size[2]/2 > self.matrix.shape[3]:
+                continue
 
             train_frames = self.matrix[month,
                     i-self.train_frame_size[0]-self.predict_interval-self.predict_frame_size[0]+1:
@@ -230,55 +367,189 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
 
             if np.sum(train_frames[-1] >= self.threshold) < self.pixnum_threshold:
                 continue
+                
+            ds = cv2.resize(train_frames.transpose((1,2,0)), (0,0), fx=1./self.postdiv, fy=1./self.postdiv).transpose((2,0,1))
+            x = ds.round().astype('uint8').flatten()
+            rain_prob = pred_func(x.reshape(1, x.shape[0]))[0][0]
+            pred_rain = rain_prob >= 0.5
+                    
+            for j in range(track_frames.shape[0]):
+                dt = self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1 - j
+                dx = flow_mean[1] * dt * self.tdiv / self.prediv
+                dy = flow_mean[0] * dt * self.tdiv / self.prediv
+                track_frame_center = (train_frame_center[0] - int(round(dx)), train_frame_center[1] - int(round(dy)))
+                
+                track_frames[j] = self.matrix[month,
+                        i-self.train_frame_size[0]-self.predict_interval-self.predict_frame_size[0]+1+j,
+                        track_frame_center[0]-self.train_frame_size[1]/2:
+                        track_frame_center[0]+self.train_frame_size[1]/2,
+                        track_frame_center[1]-self.train_frame_size[2]/2:
+                        track_frame_center[1]+self.train_frame_size[2]/2
+                    ].astype('float')    
+                    
+#            if np.sum(track_frames[-1] >= self.threshold) < self.pixnum_threshold:
+#                continue
             
-            future_frames = self.matrix[month,
+            ds = cv2.resize(track_frames.transpose((1,2,0)), (0,0), fx=1./self.postdiv, fy=1./self.postdiv).transpose((2,0,1))
+            x = ds.round().astype('uint8').flatten()
+            rain_prob_track = pred_func_track(x.reshape(1, x.shape[0]))[0][0]
+            pred_rain_track = rain_prob_track >= 0.5
+            
+            pred_rain_flow = track_frames[-1, self.train_frame_size[1]/2, self.train_frame_size[2]/2] >= self.threshold
+    
+            rain = self.matrix[month, i, predict_frame_center[0], predict_frame_center[1]] >= self.threshold
+            
+            nexamples += 1
+            if pred_rain == rain:
+                nrights += 1
+            if pred_rain_track == rain:
+                nrights_track += 1
+            if pred_rain_flow == rain:
+                nrights_flow += 1
+                
+            if nexamples % 1000 == 0:
+                print nexamples
+            continue
+                
+            c0 = True if self.show_right is None else (pred_rain == rain) == self.show_right
+            c1 = True if self.show_right_track is None else (pred_rain_track == rain) == self.show_right_track
+            if c0 and c1:
+#                print 'sum =', np.sum(train_frames[-1] >= self.threshold)
+                print 'flow_mean =', flow_mean, flow_mean_norm
+                print 'rain_prob =', rain_prob, 'rain_prob_track =', rain_prob_track
+                print 'center_val =', self.matrix[month, i, predict_frame_center[0], predict_frame_center[1]]
+                
+                track_center_vals = np.concatenate((track_frames[:, self.train_frame_size[1]/2, self.train_frame_size[2]/2],
+                                future_track_frames[:, self.train_frame_size[1]/2, self.train_frame_size[2]/2]))
+                print 'track_center_vals =', track_center_vals
+                
+                future_frames = self.matrix[month,
                     i-self.predict_interval-self.predict_frame_size[0]+1 : i+1,
                     train_frame_center[0]-self.train_frame_size[1]/2:
                     train_frame_center[0]+self.train_frame_size[1]/2,
                     train_frame_center[1]-self.train_frame_size[2]/2:
                     train_frame_center[1]+self.train_frame_size[2]/2
-                ].astype('float')
-
-            flow_frame = self.flow[month,
-                    i-self.predict_interval-self.predict_frame_size[0],
-                    train_frame_center[0]/self.postdiv - self.train_frame_size[1]/2/self.postdiv:
-                    train_frame_center[0]/self.postdiv + self.train_frame_size[1]/2/self.postdiv,
-                    train_frame_center[1]/self.postdiv - self.train_frame_size[2]/2/self.postdiv:
-                    train_frame_center[1]/self.postdiv + self.train_frame_size[2]/2/self.postdiv
-                ]   
-            
-            flow_mean = flow_frame.mean(axis=(0,1))/10.
-            flow_mean_norm = np.sum(flow_mean**2)**(1./2)
-            
-            ds = cv2.resize(train_frames.transpose((1,2,0)), (0,0), fx=1./self.postdiv, fy=1./self.postdiv).transpose((2,0,1))
-            x = ds.round().astype('uint8').flatten()
-            
-            rain_prob = pred_func(x.reshape(1, x.shape[0]))[0]
-            pred_rain = rain_prob >= 0.5
-            rain = self.matrix[month, i, predict_frame_center[0], predict_frame_center[1]] >= self.threshold
-            
-            if pred_rain != rain:
-                print 'sum =', np.sum(train_frames[-1] >= self.threshold)
-                print 'flow_mean =', flow_mean, flow_mean_norm
-                print 'rain_prob =', rain_prob
-                print 'center_val =', self.matrix[month, i, predict_frame_center[0], predict_frame_center[1]]
+                ].astype('float')                
+                   
+                train_frames_ds = self.matrix[month,
+                        i-self.train_frame_size[0]-self.predict_interval-self.predict_frame_size[0]+1:
+                        i-self.predict_interval-self.predict_frame_size[0]+1,
+                        train_frame_center[0]-self.train_frame_size[1]/2*self.showdiv:
+                        train_frame_center[0]+self.train_frame_size[1]/2*self.showdiv,
+                        train_frame_center[1]-self.train_frame_size[2]/2*self.showdiv:
+                        train_frame_center[1]+self.train_frame_size[2]/2*self.showdiv
+                    ].astype('float')
+                train_frames_ds = cv2.resize(train_frames_ds.transpose((1,2,0)), (0,0), 
+                                        fx=1./self.showdiv, fy=1./self.showdiv).transpose((2,0,1))
+    
+                future_frames_ds = self.matrix[month,
+                        i-self.predict_interval-self.predict_frame_size[0]+1 : i+1,
+                        train_frame_center[0]-self.train_frame_size[1]/2*self.showdiv:
+                        train_frame_center[0]+self.train_frame_size[1]/2*self.showdiv,
+                        train_frame_center[1]-self.train_frame_size[2]/2*self.showdiv:
+                        train_frame_center[1]+self.train_frame_size[2]/2*self.showdiv
+                    ].astype('float')
+                future_frames_ds = cv2.resize(future_frames_ds.transpose((1,2,0)), (0,0), 
+                                        fx=1./self.showdiv, fy=1./self.showdiv).transpose((2,0,1))
                 
-                pv = patch_viewer.PatchViewer(grid_shape=(1, train_frames.shape[0]+future_frames.shape[0]), 
+                assert train_frames_ds.shape == train_frames.shape
+                assert future_frames_ds.shape == future_frames.shape
+                
+                for j in range(future_track_frames.shape[0]):
+                    dt = self.predict_interval + self.predict_frame_size[0] - 1 - j
+                    dx = flow_mean[1] * dt * self.tdiv / self.prediv
+                    dy = flow_mean[0] * dt * self.tdiv / self.prediv
+                    track_frame_center = (train_frame_center[0] - int(round(dx)), train_frame_center[1] - int(round(dy)))
+                    
+                    future_track_frames[j] = self.matrix[month,
+                            i-self.predict_interval-self.predict_frame_size[0]+1+j,
+                            track_frame_center[0]-self.train_frame_size[1]/2:
+                            track_frame_center[0]+self.train_frame_size[1]/2,
+                            track_frame_center[1]-self.train_frame_size[2]/2:
+                            track_frame_center[1]+self.train_frame_size[2]/2
+                        ].astype('float')  
+                          
+                for j in range(track_frames.shape[0]):
+                    dt = self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1 - j
+                    dx = flow_mean[1] * dt * self.tdiv / self.prediv
+                    dy = flow_mean[0] * dt * self.tdiv / self.prediv
+                    track_frame_center = (train_frame_center[0] - int(round(dx)), train_frame_center[1] - int(round(dy)))
+                    
+                    track_frames_ds_j = self.matrix[month,
+                            i-self.train_frame_size[0]-self.predict_interval-self.predict_frame_size[0]+1+j,
+                            track_frame_center[0]-self.train_frame_size[1]/2*self.showdiv:
+                            track_frame_center[0]+self.train_frame_size[1]/2*self.showdiv,
+                            track_frame_center[1]-self.train_frame_size[2]/2*self.showdiv:
+                            track_frame_center[1]+self.train_frame_size[2]/2*self.showdiv
+                        ].astype('float')     
+                    track_frames_ds[j] = cv2.resize(track_frames_ds_j, (0,0), 
+                                        fx=1./self.showdiv, fy=1./self.showdiv)
+                    
+                for j in range(future_track_frames.shape[0]):
+                    dt = self.predict_interval + self.predict_frame_size[0] - 1 - j
+                    dx = flow_mean[1] * dt * self.tdiv / self.prediv
+                    dy = flow_mean[0] * dt * self.tdiv / self.prediv
+                    track_frame_center = (train_frame_center[0] - int(round(dx)), train_frame_center[1] - int(round(dy)))
+                    
+                    if track_frame_center[0]-self.train_frame_size[1]/2*self.showdiv < 0 or \
+                            track_frame_center[0]+self.train_frame_size[1]/2*self.showdiv > self.matrix.shape[2] or \
+                            track_frame_center[1]-self.train_frame_size[2]/2*self.showdiv < 0 or \
+                            track_frame_center[1]+self.train_frame_size[2]/2*self.showdiv > self.matrix.shape[3]:
+                        future_track_frames_ds[j] *= 0.0
+                    else:
+                        track_frames_ds_j = self.matrix[month,
+                                i-self.predict_interval-self.predict_frame_size[0]+1+j,
+                                track_frame_center[0]-self.train_frame_size[1]/2*self.showdiv:
+                                track_frame_center[0]+self.train_frame_size[1]/2*self.showdiv,
+                                track_frame_center[1]-self.train_frame_size[2]/2*self.showdiv:
+                                track_frame_center[1]+self.train_frame_size[2]/2*self.showdiv
+                            ].astype('float')     
+                        future_track_frames_ds[j] = cv2.resize(track_frames_ds_j, (0,0), 
+                                            fx=1./self.showdiv, fy=1./self.showdiv)
+                
+                pv = patch_viewer.PatchViewer(grid_shape=(4, track_frames.shape[0] + future_frames.shape[0]), 
                                               patch_shape=[train_frames.shape[1], train_frames.shape[2]])
                 for fidx in range(train_frames.shape[0]):
                     pv.add_patch(train_frames[fidx], activation=0)
                 for fidx in range(future_frames.shape[0]):
                     pv.add_patch(future_frames[fidx], activation=0)
+                    
+                for fidx in range(train_frames_ds.shape[0]):
+                    pv.add_patch(train_frames_ds[fidx], activation=0)
+                for fidx in range(future_frames_ds.shape[0]):
+                    pv.add_patch(future_frames_ds[fidx], activation=0)                    
+                    
+                for fidx in range(track_frames.shape[0]):
+                    pv.add_patch(track_frames[fidx], activation=0)
+                for fidx in range(future_track_frames.shape[0]):
+                    pv.add_patch(future_track_frames[fidx], activation=0)
+                    
+                for fidx in range(track_frames_ds.shape[0]):
+                    pv.add_patch(track_frames_ds[fidx], activation=0)
+                for fidx in range(future_track_frames_ds.shape[0]):
+                    pv.add_patch(future_track_frames_ds[fidx], activation=0)
+                    
                 pv.show()
                 
-    def build_pred_func(self, model_path):
-        model = serial.load(model_path)
+        print 'nrights =', nrights
+        print 'nrights_track =', nrights_track
+        print 'nrights_flow =', nrights_flow
+                
+    def build_pred_func(self):
+        model = serial.load(self.model_path)
         print 'compiling function ...'
         X = model.get_input_space().make_batch_theano()
         y = model.fprop(X)
         func = function([X], y,allow_input_downcast=True)
         print 'done.'
-        return func
+        
+        model = serial.load(self.model_path_track)
+        print 'compiling function ...'
+        X = model.get_input_space().make_batch_theano()
+        y = model.fprop(X)
+        func_track = function([X], y,allow_input_downcast=True)
+        print 'done.'
+        return func, func_track
             
 class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
     def __init__(self,  

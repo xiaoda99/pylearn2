@@ -913,6 +913,9 @@ class MaxoutConvC01B(Layer):
         rval = OrderedDict([('kernel_norms_min', row_norms.min()),
                             ('kernel_norms_mean', row_norms.mean()),
                             ('kernel_norms_max', row_norms.max()), ])
+        
+        # added by XD
+        return rval
 
         if (state is not None) or (state_below is not None):
             if state is None:

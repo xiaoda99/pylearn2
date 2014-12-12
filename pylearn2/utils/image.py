@@ -74,6 +74,7 @@ def imview(*args, **kwargs):
     if len(args) < 5 and 'interpolation' not in kwargs:
         kwargs['interpolation'] = 'nearest'
     plt.imshow(*args, **kwargs)
+    plt.show()  #XD added
 
 
 def imview_async(*args, **kwargs):

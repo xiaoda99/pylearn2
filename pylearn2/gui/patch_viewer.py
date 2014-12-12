@@ -5,7 +5,7 @@ import numpy as np
 from theano.compat.six.moves import xrange
 from pylearn2.datasets.dense_design_matrix import DefaultViewConverter
 from pylearn2.utils.image import Image, ensure_Image
-from pylearn2.utils.image import show
+from pylearn2.utils.image import show, imview
 from pylearn2.utils import isfinite
 from pylearn2.utils import py_integer_types
 import warnings
@@ -363,7 +363,8 @@ class PatchViewer(object):
             WRITEME
         """
         #image.imview_async(self.image)
-        show(self.image)
+        #show(self.image)
+        imview(self.image)
 
     def get_img(self):
         """
