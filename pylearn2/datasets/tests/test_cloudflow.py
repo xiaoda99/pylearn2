@@ -1,4 +1,8 @@
 from pylearn2.datasets.cloudflow import CLOUDFLY, CLOUDFLOW, CLOUDFLOW2
+import math
+import cv2
+import pylab as plt
+
 test = CLOUDFLOW2(  
                  which_set='train',
                  num_examples=620000,
@@ -26,12 +30,43 @@ test = CLOUDFLOW2(
                  examples_per_image = 100,
                  video_shape = (7200, 477, 477),
                  image_border=(88, 88),
+                 pad_border=(40, 40),
                  train_slot=50,   # 5 hours
                  valid_slot=20,   # 2 hours
                  test_slot=30,   # 3 hours
                  predict_style='point',
-                 with_flow_feature=False
                  )
+
+"""
+month, i, center, flow_mean  = test.show_random_examples(10000)
+self = test
+dt = self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1
+dx = flow_mean[1] * dt * self.tdiv / self.prediv
+dy = flow_mean[0] * dt * self.tdiv / self.prediv
+dx = int(math.ceil(abs(dx)))
+dy = int(math.ceil(abs(dy)))
+dx
+dy
+diag_radius = int(math.ceil(math.sqrt(pow(self.train_frame_size[1]/2, 2) + 
+                                    pow(self.train_frame_size[2]/2, 2))))
+rmax = max(dx + diag_radius, dy + diag_radius)
+rmax = int(math.ceil(rmax * math.sqrt(2.)))
+radius = (rmax, rmax)
+base_frames = self.get_frames(month, i, center, radius)
+base_frames.shape
+frame = base_frames[-1]
+plt.imshow(frame); plt.show()
+
+flow_mean = flow_mean.reshape((1,2))
+mag, ang = cv2.cartToPolar(flow_mean[:,0], flow_mean[:,1], angleInDegrees=True)
+angle = ang[0,0]
+angle
+rot_mat = cv2.getRotationMatrix2D((radius[1], radius[0]), angle, 1.0)
+rotated = cv2.warpAffine(frame, rot_mat, (frame.shape[1], frame.shape[0]))
+rotated.shape
+plt.imshow(rotated); plt.show()
+"""
+
 
 """                 
 trainset = CLOUDFLY(
