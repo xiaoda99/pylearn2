@@ -2,18 +2,24 @@ from pylearn2.datasets.cloudflow import CLOUDFLY, CLOUDFLOW, CLOUDFLOW2
 import math
 import cv2
 import pylab as plt
+import numpy as np
+
+#train:76
+#valid:31
+#test:46
 
 test = CLOUDFLOW2(  
-                 which_set='train',
-                 num_examples=620000,
+                 which_set='test',
+                 num_examples=1000000,
                  threshold=3,
                  pixnum_threshold = 1,
                  prediv = 2,
                  postdiv = 2,
                  tdiv = 2,
                  train_frame_size = (3,24,24),
-                 predict_frame_size = (1,1,1),
-                 predict_interval = 2,
+                 filter_frame_size = (1,30,30),
+                 predict_frame_size = (3,1,1),
+                 predict_interval = 0,
                  stride = (3,3),
                  tstride = 1,
                  data_files = ['radar_img_matrix_AZ9280_201407_uint8.pkl.gz',
@@ -26,7 +32,7 @@ test = CLOUDFLOW2(
                                'radar_img_matrix_AZ9200_201406_uint8.pkl.gz',
                                'radar_img_matrix_AZ9200_201407_uint8.pkl.gz',
                                'radar_img_matrix_AZ9200_201408_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9200_201409_uint8.pkl.gz'],
+                               'radar_img_matrix_AZ9200_201409_uint8.pkl.gz',],
                  examples_per_image = 100,
                  video_shape = (7200, 477, 477),
                  image_border=(88, 88),
@@ -34,7 +40,8 @@ test = CLOUDFLOW2(
                  train_slot=50,   # 5 hours
                  valid_slot=20,   # 2 hours
                  test_slot=30,   # 3 hours
-                 predict_style='point',
+                 predict_style='interval',
+                 track=True
                  )
 
 """
@@ -54,19 +61,26 @@ rmax = int(math.ceil(rmax * math.sqrt(2.)))
 radius = (rmax, rmax)
 base_frames = self.get_frames(month, i, center, radius)
 base_frames.shape
-frame = base_frames[-1]
-plt.imshow(frame); plt.show()
 
 flow_mean = flow_mean.reshape((1,2))
 mag, ang = cv2.cartToPolar(flow_mean[:,0], flow_mean[:,1], angleInDegrees=True)
 angle = ang[0,0]
-angle
 rot_mat = cv2.getRotationMatrix2D((radius[1], radius[0]), angle, 1.0)
-rotated = cv2.warpAffine(frame, rot_mat, (frame.shape[1], frame.shape[0]))
-rotated.shape
-plt.imshow(rotated); plt.show()
-"""
 
+j = 0
+frame = base_frames[j]
+rotated = cv2.warpAffine(frame, rot_mat, (frame.shape[1], frame.shape[0]))
+dt_near = -(self.train_frame_size[0] + self.predict_interval - j)
+dt_far = -(self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1 - j)
+center0 = radius
+flow = (mag[0,0], 0.)
+center_near = self.translate_coords(center0, flow, dt_near)
+center_far = self.translate_coords(center0, flow, dt_far)
+r = self.train_frame_radius
+cropped = rotated[center_near[0] - r[0] : center_near[0] + r[0], 
+                center_far[1] - r[1] : center_near[1] + r[1]]
+resized = cv2.resize(cropped, (cropped.shape[0], cropped.shape[0]))
+"""
 
 """                 
 trainset = CLOUDFLY(

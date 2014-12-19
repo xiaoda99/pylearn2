@@ -2485,6 +2485,15 @@ class Sigmoid(Linear):
                 # it's considered incorrect, so we max over columns.
                 incorrect = T.neq(targets, prediction).max(axis=1)
                 rval['misclass'] = T.cast(incorrect, config.floatX).mean()
+                
+                # added by XD
+                predict = T.cast(prediction, config.floatX).sum()  # mean() and sum() are the same
+                rain = T.cast(targets, config.floatX).sum()
+                predict_and_rain = T.cast(T.eq(prediction + targets, 2), config.floatX).sum() 
+                rval['predict_and_rain'] = T.cast(T.eq(prediction + targets, 2), config.floatX).sum()
+                rval['predict'] = T.cast(prediction, config.floatX).sum()
+                rval['rain'] = T.cast(targets, config.floatX).sum()
+                
         return rval
 
 
