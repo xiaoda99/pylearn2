@@ -1,39 +1,37 @@
 #!/usr/bin/env python
-"""
-.. todo::
-
-    WRITEME
-"""
-from __future__ import print_function
-
 __authors__ = "Ian Goodfellow"
 __copyright__ = "Copyright 2010-2012, Universite de Montreal"
 __credits__ = ["Ian Goodfellow"]
 __license__ = "3-clause BSD"
-__maintainer__ = "LISA Lab"
-__email__ = "pylearn-dev@googlegroups"
-
-def print_monitor(args):
-    from pylearn2.utils import serial
-    import gc
-    for model_path in args:
-        if len(args) > 1:
-            print(model_path)
-        model = serial.load(model_path)
-        monitor = model.monitor
-        del model
-        gc.collect()
-        channels = monitor.channels
-        if not hasattr(monitor, '_epochs_seen'):
-            print('old file, not all fields parsed correctly')
-        else:
-            print('epochs seen: ', monitor._epochs_seen)
-        print('time trained: ', max(channels[key].time_record[-1] for key in
-              channels))
-        for key in sorted(channels.keys()):
-            print(key, ':', channels[key].val_record[-1])
-
-
-if __name__ == '__main__':
-    import sys
-    print_monitor(sys.argv[1:])
+__maintainer__ = "Ian Goodfellow"
+__email__ = "goodfeli@iro"
+import sys
+from pylearn2.utils import serial
+for model_path in sys.argv[1:]:
+    if len(sys.argv) > 2:
+        print model_path
+    model = serial.load(model_path)
+    monitor = model.monitor
+    channels = monitor.channels
+    print 'epochs seen: ',monitor._epochs_seen
+    print 'time trained: ',max(channels[key].time_record[-1] for key in channels)
+    for key in sorted(channels.keys()):
+        print key, ':', channels[key].val_record[-1]
+        
+    # added by XD
+    datasets = ('train', 'valid', 'test')
+    for which_set in datasets:
+        if not (which_set + '_y_' + 'predict' in channels and 
+                which_set + '_y_' + 'rain' in channels and 
+                which_set + '_y_' + 'predict_and_rain' in channels):
+            import sys
+            sys.exit()
+        
+    for which_set in datasets:
+        predict = channels[which_set + '_y_' + 'predict'].val_record[-1]
+        rain = channels[which_set + '_y_' + 'rain'].val_record[-1]
+        predict_and_rain = channels[which_set + '_y_' + 'predict_and_rain'].val_record[-1]
+        false_positive = 1. - predict_and_rain * 1. / predict
+        false_negative = 1. - predict_and_rain * 1. / rain
+        print which_set + '_y_' + 'false_positive', ':', false_positive
+        print which_set + '_y_' + 'false_negative', ':', false_negative
