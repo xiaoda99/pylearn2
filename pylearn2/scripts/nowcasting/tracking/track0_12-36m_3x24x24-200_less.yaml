@@ -43,7 +43,7 @@
                     monitor_style: 'classification',
                  }
                 ],
-        nvis: 432,
+        nvis: 4320,
     },
     algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
         batch_size: 512,

@@ -10,7 +10,7 @@ import numpy as np
 
 test = CLOUDFLOW2(  
                  which_set='test',
-                 num_examples=1000000,
+                 num_examples=10000,
                  threshold=3,
                  pixnum_threshold = 1,
                  prediv = 2,
