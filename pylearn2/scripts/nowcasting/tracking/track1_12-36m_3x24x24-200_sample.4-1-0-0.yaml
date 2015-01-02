@@ -28,8 +28,8 @@
                  image_border: [88, 88],
                  pad_border: [40, 40],
                  predict_style: 'interval',
-                 track: False,
-                 sampling_rates: [1., 1., 1., 1.],
+                 track: True,
+                 sampling_rates: [.4, 1., 0., 0.],
     },
     model: !obj:pylearn2.models.mlp.MLP {
         batch_size: 512,
@@ -86,8 +86,8 @@
                  image_border: [88, 88],
                  pad_border: [40, 40],
                  predict_style: 'interval',
-                 track: False,
-                 sampling_rates: [1., 1., 1., 1.],
+                 track: True,
+                 sampling_rates: [.4, 1., 0., 0.],
                  },
                 'test' : &test !obj:pylearn2.datasets.cloudflow.CLOUDFLOW2 {
                  which_set: 'test',
@@ -118,8 +118,8 @@
                  image_border: [88, 88],
                  pad_border: [40, 40],
                  predict_style: 'interval',
-                 track: False,
-                 sampling_rates: [1., 1., 1., 1.],
+                 track: True,
+                 sampling_rates: [1., 1., 0., 0.],
                  },
             },
         cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
