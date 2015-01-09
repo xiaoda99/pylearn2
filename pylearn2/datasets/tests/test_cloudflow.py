@@ -10,7 +10,7 @@ import numpy as np
 
 test = CLOUDFLOW2(  
                  which_set='test',
-                 num_examples=10000,
+                 num_examples=350000,
                  threshold=3,
                  pixnum_threshold = 1,
                  prediv = 2,
@@ -18,8 +18,8 @@ test = CLOUDFLOW2(
                  tdiv = 2,
                  train_frame_size = (3,24,24),
                  filter_frame_size = (1,30,30),
-                 predict_frame_size = (1,1,1),
-                 predict_interval = 2,
+                 predict_frame_size = (3,1,1),
+                 predict_interval = 0,
                  stride = (3,3),
                  tstride = 1,
                  data_files = ['radar_img_matrix_AZ9280_201407_uint8.pkl.gz',
@@ -33,7 +33,7 @@ test = CLOUDFLOW2(
                                'radar_img_matrix_AZ9200_201407_uint8.pkl.gz',
                                'radar_img_matrix_AZ9200_201408_uint8.pkl.gz',
                                'radar_img_matrix_AZ9200_201409_uint8.pkl.gz',],
-                 examples_per_image = 10,
+                 examples_per_image = 100,
                  video_shape = (7200, 477, 477),
                  image_border=(88, 88),
                  pad_border=(40, 40),
@@ -41,9 +41,11 @@ test = CLOUDFLOW2(
                  valid_slot=20,   # 2 hours
                  test_slot=30,   # 3 hours
                  predict_style='interval',
-                 track=True
+                 track=True,
+                 sampling_rates=(1., 1., 0., 0.),
+                 run_test=None
                  )
-
+#test.gen_random_examples2(test_mode=True)
 """
 month, i, center, flow_mean  = test.show_random_examples(10000)
 self = test

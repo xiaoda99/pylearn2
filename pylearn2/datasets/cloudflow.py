@@ -10,6 +10,7 @@ import cv2
 import cv2.cv as cv
 import random
 import math
+from pprint import pprint
 
 from theano import function
 from pylearn2.datasets import dense_design_matrix
@@ -43,7 +44,8 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
                  predict_style='point',
                  track=True,
                  rotate=True,
-                 sampling_rates=(1., 1., 1., 1.)
+                 sampling_rates=(1., 1., 1., 1.),
+                 run_test=False
                  ):
 
         assert predict_style in ['interval', 'point']
@@ -174,8 +176,11 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
                 print 'done.'
                 
         self.init_defaults()
-                
-        self.gen_random_examples2()
+        
+        if run_test is None:
+            return   # for show_random_examples()
+        
+        self.gen_random_examples2(run_test)
         
         shape = (self.train_frame_size[1] / self.postdiv,  #rows
                  self.train_frame_size[2] / self.postdiv,  #cols
@@ -216,12 +221,35 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         self.show_right_track = None
         self.showdiv = 2
         self.model_base = '/home/xd/projects/pylearn2/pylearn2/scripts/nowcasting/tracking/'
-        self.model_path = self.model_base + 'track0_36m_3x24x24-200_less_best.pkl'
-        self.model_path_track = self.model_base + 'track1_36m_3x24x24-200_less_best.pkl'
+        self.model_path = self.model_base + 'track0_12-36m_3x24x24-200_sample.5-1-1-1_best.pkl'
+        self.model_path_track = self.model_base + 'track1_12-36m_3x24x24-200_sample.5-1-1-1_best.pkl'
 #        self.model_path = self.model_base + 'track0_12-36m_3x24x24-200_sample1_best.pkl'
 #        self.model_path_track = self.model_base + 'track1_12-36m_3x24x24-200_sample1_best.pkl'
+        self.cnts_total = np.zeros(4, dtype='int32')
+        self.cnts_sampled = np.zeros(4, dtype='int32')
+#        self.cnts_total_track = np.zeros(4, dtype='int32')
+#        self.cnts_sampled_track = np.zeros(4, dtype='int32')
+        self.min_flow_norm = 6.
+        self.max_flow_norm = 15.
         
-    def sampled(self, last_rain, last_rain_track, rain):
+    def sampled(self, last_rain, rain):
+        if last_rain == 0 and rain == 0:
+            type = 0
+        elif last_rain == 0 and rain == 1:
+            type = 1
+        elif last_rain == 1 and rain == 0:
+            type = 2
+        else:
+            type = 3
+        
+        threshold = self.sampling_rates[type]
+        ret = np.random.uniform(0., 1.) < threshold
+        
+        self.cnts_total[type] += 1
+        self.cnts_sampled[type] += ret
+        return ret
+        
+    def sampled_old(self, last_rain, last_rain_track, rain):
         if last_rain == 0 and rain == 0:
             type = 0
         elif last_rain == 0 and rain == 1:
@@ -265,8 +293,8 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         self.example_cnt = 0
         self.cnts_total = np.zeros(4, dtype='int32')
         self.cnts_sampled = np.zeros(4, dtype='int32')
-        self.cnts_total_track = np.zeros(4, dtype='int32')
-        self.cnts_sampled_track = np.zeros(4, dtype='int32')
+#        self.cnts_total_track = np.zeros(4, dtype='int32')
+#        self.cnts_sampled_track = np.zeros(4, dtype='int32')
         for month in range(self.matrix.shape[0]):
             print 'month =', month
             loop = 0
@@ -391,19 +419,27 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         #track_frames = np.zeros(self.train_frame_size)
         
         self.example_cnt = 0
-        self.cnts_total = np.zeros(4, dtype='int32')
-        self.cnts_sampled = np.zeros(4, dtype='int32')
-        self.cnts_total_track = np.zeros(4, dtype='int32')
-        self.cnts_sampled_track = np.zeros(4, dtype='int32')
         
         if test_mode:
             pred_func, pred_func_track = self.build_pred_func()
-            nn = {'name':'nn', 'pred':0, 'npred':0, 'nrain':0, 'npred&rain':0}
-            tracknn = {'name':'tracknn', 'pred':0, 'npred':0, 'nrain':0, 'npred&rain':0}
-            flow = {'name':'flow', 'pred':0, 'npred':0, 'nrain':0, 'npred&rain':0}
-            persistent = {'name':'persistent', 'pred':0, 'npred':0, 'nrain':0, 'npred&rain':0}
-            models = [nn, tracknn, flow, persistent]
+            
+            model_template = {'pred':0, 'npred':0, 'nrain':0, 'npred&rain':0}
+            models = {}
+            models['flow'] = model_template.copy()
+            models['nn'] = model_template.copy()
+            models['tracknn'] = model_template.copy()
+            groups = {}
+            from copy import deepcopy
+            groups[0] = deepcopy(models)   # 0~2
+            groups[1] = deepcopy(models)   # 2~4
+            groups[2] = deepcopy(models)   # 4~6
+            groups[3] = deepcopy(models)   # 6~8
+            groups[4] = deepcopy(models)   # 8~10
+            groups[5] = deepcopy(models)   # 10~12
+            nn_wrong = 0; tracknn_wrong = 0; both_wrong = 0
         
+        self.dc = []
+        self.flow_norms = []
         for month in range(self.matrix.shape[0]):
             print 'month =', month
             for i in range(self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1, 
@@ -414,8 +450,6 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
                     h_center = np.random.randint(h_center_low, h_center_high)
                     w_center = np.random.randint(w_center_low, w_center_high)
                     predict_frame_center = train_frame_center = (h_center, w_center)    
-                    
-                    last_rain = self.get_point_value(month, i-self.predict_frame_size[0]-self.predict_interval, train_frame_center) >= self.threshold
                     
                     filter_frames = self.get_frames(month, i, train_frame_center, 
                                                 (self.filter_frame_size[1]/2, self.filter_frame_size[2]/2))
@@ -431,22 +465,7 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
                                                         pow(self.train_frame_size[2]/2, 2))))
                     if not self.in_logical_matrix(track_frame_center, (diag_radius, diag_radius)):
                         continue
-                    
-#                    if not self.track:
-#                        flow_mean *= 0.0   # track_frame_center = train_frame_center
-                                
-#                    if self.get_track_frames(month, i, train_frame_center, flow_mean, track_frames) is None:
-#                        continue
-
-#                    if not self.rotate:
-#                        assert self.predict_frame_size[0] == 1
-#                        track_frames = self.get_track_frames_norotate(month, i, train_frame_center, flow_mean)
-#                    else:
-#                        track_frames = self.get_track_frames(month, i, train_frame_center, flow_mean)
-#                    if track_frames is None:
-#                        filtered3 += 1
-#                        continue
-                    
+                                        
                     track_frames = self.get_track_frames(month, i, train_frame_center, flow_mean)
                     if track_frames is None:
                         continue
@@ -454,22 +473,12 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
 #                    train_frames_ext = self.get_frames_ext(month, i, train_frame_center, self.train_frame_radius)
 #                    train_frames = train_frames_ext[:self.train_frame_size[0]]        
                     train_frames = self.get_frames(month, i, train_frame_center, self.train_frame_radius)
-                    
-#                    last_frame = filter_frames[-1]
-#                    last_center_area = last_frame[self.filter_frame_size[1]/2-1 : self.filter_frame_size[1]/2+2,
-#                                                  self.filter_frame_size[2]/2-1 : self.filter_frame_size[2]/2+2]
-#                    last_rain = last_center_area.mean() >= self.threshold
-#                    
-#                    last_frame_track = track_frames[-1]
-#                    last_center_area_track = last_frame_track[self.train_frame_radius[0]-1 : self.train_frame_radius[0]+2, 
-#                                                              self.train_frame_radius[1]-1 : self.train_frame_radius[1]+2]
-#                    last_rain_track = last_center_area_track.mean() >= self.threshold
-                    
-                    last_rain_track = track_frames[-1, self.train_frame_size[1]/2, 
+
+                    last_rain = train_frames[-1, self.train_frame_size[1]/2, 
                                                 self.train_frame_size[2]/2] >= self.threshold       
                     rain = self.get_rain_status(month, i, train_frame_center, last_rain)  
                     
-                    if not self.sampled(last_rain, last_rain_track, rain):
+                    if not self.sampled(last_rain, rain):
                         continue
                     self.example_cnt += 1
                     
@@ -482,44 +491,78 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
                         self.y_large[self.example_cnt, 0] = rain
                     else:
                         assert self.which_set == 'test'
+                        group_id = self.filter(flow_mean)
+                        models_in_group = groups[group_id]
+                        
                         rain_prob_track = self.predict_rain_prob(track_frames, pred_func_track)
-                        tracknn['pred'] = rain_prob_track >= 0.5
+                        models['tracknn']['pred'] = rain_prob_track >= 0.5
+                        models_in_group['tracknn']['pred'] = rain_prob_track >= 0.5
                         rain_prob = self.predict_rain_prob(train_frames, pred_func)
-                        nn['pred'] = rain_prob >= 0.5
+                        models['nn']['pred'] = rain_prob >= 0.5
+                        models_in_group['nn']['pred'] = rain_prob >= 0.5
+                        
+#                        ensemble['pred'] = (rain_prob_track + rain_prob) / 2. >= 0.5
                         
                         rain_prob_flow, traceback_vals = self.pred_func_flow(train_frames, flow_center)
-                        
-                        flow['pred'] = rain_prob_flow >= 0.5
+                        models['flow']['pred'] = rain_prob_flow >= 0.5
+                        models_in_group['flow']['pred'] = rain_prob_flow >= 0.5
                                                     
-                        persistent['pred'] = last_rain
+#                        persistent['pred'] = last_rain
+                        
+#                        if not self.filtered(last_rain, rain, rain_prob_track, flow_mean, month, i):
+#                            continue
                                                 
-                        for model in models:
+                        for model_name in models:
+                            model = models[model_name]
                             model['npred'] += model['pred']
                             model['nrain'] += rain
                             model['npred&rain'] += (model['pred'] * rain)
                         
+                        for model_name in models_in_group:
+                            model = models_in_group[model_name]
+                            model['npred'] += model['pred']
+                            model['nrain'] += rain
+                            model['npred&rain'] += (model['pred'] * rain)
                             
-            print 'example_cnt =', self.example_cnt
-            print 'cnts_total =', self.cnts_total
-            print 'cnts_sampled =', self.cnts_sampled
-            print 'cnts_total_track =', self.cnts_total_track
-            print 'cnts_sampled_track =', self.cnts_sampled_track
+            if test_mode:
+                pprint(models)
+                pprint(groups)            
+#            print 'example_cnt =', self.example_cnt
+#            print 'cnts_total =', self.cnts_total
+#            print 'cnts_sampled =', self.cnts_sampled
+#            print 'cnts_total_track =', self.cnts_total_track
+#            print 'cnts_sampled_track =', self.cnts_sampled_track
               
         t1 = time.time()
         print 'Done. Total =', self.example_cnt, 'Time:', t1 - t0
         print 'cnts_total =', self.cnts_total
         print 'cnts_sampled =', self.cnts_sampled
-        print 'cnts_total_track =', self.cnts_total_track
-        print 'cnts_sampled_track =', self.cnts_sampled_track
+#        print 'cnts_total_track =', self.cnts_total_track
+#        print 'cnts_sampled_track =', self.cnts_sampled_track
         
         if test_mode:       
-            for model in models:
-                if model['name'] != 'persistent':
-                    model['false_positive'] = 1. - model['npred&rain']*1./model['npred']
-                    model['false_negative'] = 1. - model['npred&rain']*1./model['nrain']
-                    print model
+            for model_name in models:
+                model = models[model_name]
+                precision = model['npred&rain']*1./model['npred']
+                recall = model['npred&rain']*1./model['nrain']
+                model['false_pos'] = 1. - precision
+                model['false_neg'] = 1. - recall
+                model['f1'] = 2. * precision * recall / (precision + recall)
+            for group_id in groups:
+                models_in_group = groups[group_id]    
+                for model_name in models_in_group:
+                    model = models_in_group[model_name]
+                    precision = model['npred&rain']*1./model['npred']
+                    recall = model['npred&rain']*1./model['nrain']
+                    model['false_pos'] = 1. - precision
+                    model['false_neg'] = 1. - recall
+                    model['f1'] = 2. * precision * recall / (precision + recall)
+                    
+#            print 'nn_wrong =', nn_wrong, 'tracknn_wrong =', tracknn_wrong, 'both_wrong =', both_wrong,
+            pprint(models)
+            pprint(groups) 
                
-    def show_random_examples(self, total):
+    def show_random_examples(self):
         h_center_low = self.train_frame_size[1]/2*self.showdiv
         h_center_high = self.logical_matrix_shape[2] - self.train_frame_size[1]/2*self.showdiv
         
@@ -536,8 +579,9 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         persistent = {'name':'persistent', 'pred':0, 'npred':0, 'nrain':0, 'npred&rain':0}
         models = [nn, tracknn, flow, persistent]
         
-        while nexamples < total:
+        while True:
             month = np.random.randint(self.matrix.shape[0])
+            month = 10
             i = np.random.randint(self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1, 
                                   self.matrix.shape[1])
             if not self.usable(i):
@@ -553,15 +597,6 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
             if np.sum(filter_frames >= self.threshold) < self.pixnum_threshold:
                 continue
             
-            last_frame = filter_frames[-1]
-            last_center_area = last_frame[self.filter_frame_size[1]/2-1 : self.filter_frame_size[1]/2+2,
-                                          self.filter_frame_size[2]/2-1 : self.filter_frame_size[2]/2+2]
-            last_rain = last_center_area.mean() >= self.threshold
-            
-            # count only "true" notifications when no rain at present
-#            if last_rain:
-#                continue
-            
             flow_frame, flow_mean, flow_center = self.get_flow_frame(month, i, train_frame_center, self.train_frame_radius)
             
             dt = -(self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1)
@@ -571,36 +606,28 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
             if not self.in_logical_matrix(track_frame_center, (diag_radius, diag_radius)):
                 continue
         
-            track_frames_ext = self.get_track_frames_ext(month, i, train_frame_center, flow_mean)
+            track_frames_ext, track_frames_ext_show = self.get_track_frames_ext(month, i, train_frame_center, flow_mean)
             if track_frames_ext is None:
                 continue
             track_frames = track_frames_ext[:self.train_frame_size[0]]
-            rain_prob_track = self.predict_rain_prob(track_frames, pred_func_track)
-            tracknn['pred'] = rain_prob_track >= 0.5
             
             train_frames_ext = self.get_frames_ext(month, i, train_frame_center, self.train_frame_radius)
             train_frames = train_frames_ext[:self.train_frame_size[0]]
+            
+            last_rain = train_frames[-1, self.train_frame_size[1]/2, 
+                                        self.train_frame_size[2]/2] >= self.threshold       
+            rain = self.get_rain_status(month, i, train_frame_center, last_rain)  
+            
+            if not self.sampled(last_rain, rain):
+                continue
+            
+            assert self.which_set == 'test'
+            rain_prob_track = self.predict_rain_prob(track_frames, pred_func_track)
+            tracknn['pred'] = rain_prob_track >= 0.5
             rain_prob = self.predict_rain_prob(train_frames, pred_func)
-            nn['pred'] = rain_prob >= .5
-            
-            rain_prob_flow, traceback_vals = self.pred_func_flow(train_frames, flow_center)
-            
+            nn['pred'] = rain_prob >= 0.5
+            rain_prob_flow, traceback_vals = self.pred_func_flow(train_frames, flow_center)   
             flow['pred'] = rain_prob_flow >= 0.5
-                                        
-            persistent['pred'] = train_frames[-1, self.train_frame_size[1]/2, 
-                                    self.train_frame_size[2]/2] >= self.threshold
-    
-            rain = self.get_rain_status(month, i, train_frame_center, last_rain)
-            
-            nexamples += 1
-                
-            for model in models:
-                model['npred'] += model['pred']
-                model['nrain'] += rain
-                model['npred&rain'] += (model['pred'] * rain)
-                
-            if nexamples % 10000 == 0:
-                print nexamples
                 
 #            if np.abs(flow_mean[0]) > 5. or np.abs(flow_mean[1]) > 5:
 #                continue
@@ -612,92 +639,64 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
 
 #            if abs(flow_mean[0]) < 1. or abs(flow_mean[1]) < 1.:
                 
-            c0 = True if self.show_right is None else (nn['pred'] == rain) == self.show_right
-            c1 = True if self.show_right_track is None else (tracknn['pred'] == rain) == self.show_right_track
+#            c0 = True if self.show_right is None else (nn['pred'] == rain) == self.show_right
+#            c1 = True if self.show_right_track is None else (tracknn['pred'] == rain) == self.show_right_track
 #            if c0 and c1:
-            if False:
-                print 'flow_mean =', flow_mean, flow_mean_norm
-                print 'nn[prob] =', rain_prob, 'tracknn[prob] =', rain_prob_track, 'flow[prob] =', flow['pred']
-                print 'center_vals =', train_frames_ext[-self.predict_frame_size[0]:, 
-                                                        self.train_frame_radius[0], 
-                                                        self.train_frame_radius[1]]
-                print 'traceback vals =', traceback_vals
-#                print 'center_val =', self.get_point_value(month, i, predict_frame_center)
+#            if tracknn['pred'] != rain:
+            if not self.filtered(last_rain, rain, rain_prob_track, flow_mean, month, i):
+                continue
+#            print 'flow_mean =', flow_mean
+            print 'nn[prob] =', rain_prob, 'tracknn[prob] =', rain_prob_track, 'flow[prob] =', flow['pred']
+            print 'center_vals =', train_frames_ext[-self.predict_frame_size[0]:, 
+                                                    self.train_frame_radius[0], 
+                                                    self.train_frame_radius[1]]
+            print 'traceback vals =', traceback_vals
+            
+            ds_radius = (self.train_frame_radius[0] * self.showdiv, self.train_frame_radius[1] * self.showdiv)
+            train_frames_ext_ds = self.get_frames_ext(month, i, train_frame_center, ds_radius)
+            train_frames_ext_ds = cv2.resize(train_frames_ext_ds.transpose((1,2,0)), (0,0), 
+                                    fx=1./self.showdiv, fy=1./self.showdiv).transpose((2,0,1))
+            pv = patch_viewer.PatchViewer(grid_shape=(3, train_frames_ext.shape[0]), 
+                                          patch_shape=[train_frames_ext.shape[1], train_frames_ext.shape[2]])
+            for fidx in range(train_frames_ext.shape[0]):
+                pv.add_patch(self.rescale(train_frames_ext[fidx]), activation=0, rescale=False)
                 
-#                track_center_vals = np.concatenate((track_frames[:, self.train_frame_size[1]/2, self.train_frame_size[2]/2],
-#                                future_track_frames[:, self.train_frame_size[1]/2, self.train_frame_size[2]/2]))
-#                print 'track_center_vals =', track_center_vals
-                   
-                ds_radius = (self.train_frame_radius[0] * self.showdiv, self.train_frame_radius[1] * self.showdiv)
-                train_frames_ext_ds = self.get_frames_ext(month, i, train_frame_center, ds_radius)
-                train_frames_ext_ds = cv2.resize(train_frames_ext_ds.transpose((1,2,0)), (0,0), 
-                                        fx=1./self.showdiv, fy=1./self.showdiv).transpose((2,0,1))
-#                for j in range(track_frames.shape[0]):
-#                    dt = self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1 - j
-#                    dx = flow_mean[1] * dt * self.tdiv / self.prediv
-#                    dy = flow_mean[0] * dt * self.tdiv / self.prediv
-#                    track_frame_center = (train_frame_center[0] - int(round(dx)), train_frame_center[1] - int(round(dy)))
-#                    
-#                    track_frames_ds_j = self.matrix[month,
-#                            i-self.train_frame_size[0]-self.predict_interval-self.predict_frame_size[0]+1+j,
-#                            track_frame_center[0]-self.train_frame_size[1]/2*self.showdiv:
-#                            track_frame_center[0]+self.train_frame_size[1]/2*self.showdiv,
-#                            track_frame_center[1]-self.train_frame_size[2]/2*self.showdiv:
-#                            track_frame_center[1]+self.train_frame_size[2]/2*self.showdiv
-#                        ].astype('float')     
-#                    track_frames_ds[j] = cv2.resize(track_frames_ds_j, (0,0), 
-#                                        fx=1./self.showdiv, fy=1./self.showdiv)
-#                    
-#                for j in range(future_track_frames.shape[0]):
-#                    dt = self.predict_interval + self.predict_frame_size[0] - 1 - j
-#                    dx = flow_mean[1] * dt * self.tdiv / self.prediv
-#                    dy = flow_mean[0] * dt * self.tdiv / self.prediv
-#                    track_frame_center = (train_frame_center[0] - int(round(dx)), train_frame_center[1] - int(round(dy)))
-#                    
-#                    if track_frame_center[0]-self.train_frame_size[1]/2*self.showdiv < 0 or \
-#                            track_frame_center[0]+self.train_frame_size[1]/2*self.showdiv > self.matrix.shape[2] or \
-#                            track_frame_center[1]-self.train_frame_size[2]/2*self.showdiv < 0 or \
-#                            track_frame_center[1]+self.train_frame_size[2]/2*self.showdiv > self.matrix.shape[3]:
-#                        future_track_frames_ds[j] *= 0.0
-#                    else:
-#                        track_frames_ds_j = self.matrix[month,
-#                                i-self.predict_interval-self.predict_frame_size[0]+1+j,
-#                                track_frame_center[0]-self.train_frame_size[1]/2*self.showdiv:
-#                                track_frame_center[0]+self.train_frame_size[1]/2*self.showdiv,
-#                                track_frame_center[1]-self.train_frame_size[2]/2*self.showdiv:
-#                                track_frame_center[1]+self.train_frame_size[2]/2*self.showdiv
-#                            ].astype('float')     
-#                        future_track_frames_ds[j] = cv2.resize(track_frames_ds_j, (0,0), 
-#                                            fx=1./self.showdiv, fy=1./self.showdiv)
+            for fidx in range(train_frames_ext_ds.shape[0]):
+                pv.add_patch(self.rescale(train_frames_ext_ds[fidx]), activation=0, rescale=False)             
                 
-#                pv = patch_viewer.PatchViewer(grid_shape=(4, track_frames.shape[0] + future_frames.shape[0]), 
-#                                              patch_shape=[train_frames.shape[1], train_frames.shape[2]])
-                pv = patch_viewer.PatchViewer(grid_shape=(3, train_frames_ext.shape[0]), 
-                                              patch_shape=[train_frames_ext.shape[1], train_frames_ext.shape[2]])
-                for fidx in range(train_frames_ext.shape[0]):
-                    pv.add_patch(train_frames_ext[fidx], activation=0)
-                    
-                for fidx in range(train_frames_ext_ds.shape[0]):
-                    pv.add_patch(train_frames_ext_ds[fidx], activation=0)             
-                    
-                for fidx in range(track_frames_ext.shape[0]):
-                    pv.add_patch(track_frames_ext[fidx], activation=0)
+            for fidx in range(track_frames_ext_show.shape[0]):
+                pv.add_patch(self.rescale(track_frames_ext_show[fidx]), activation=0, rescale=False)
 #                    
 #                for fidx in range(track_frames_ds.shape[0]):
 #                    pv.add_patch(track_frames_ds[fidx], activation=0)
 #                for fidx in range(future_track_frames_ds.shape[0]):
 #                    pv.add_patch(future_track_frames_ds[fidx], activation=0)
-                    
-                pv.show()
                 
-#                return month, i, train_frame_center, flow_mean
-                
-        for model in models:
-            if model['name'] != 'persistent':
-                model['false_positive'] = 1. - model['npred&rain']*1./model['npred']
-                model['false_negative'] = 1. - model['npred&rain']*1./model['nrain']
-                print model
-#        plt.show()      
+            pv.show()
+            
+    def filtered(self, last_rain, rain, rain_prob_track, flow_mean, month, i):
+        flow_norm = np.sum(flow_mean**2)**(1./2)
+        ret = (not last_rain) and (rain or rain_prob_track >= 0.5) and \
+            flow_norm >= self.min_flow_norm and flow_norm <= self.max_flow_norm
+        if ret:
+            print 'month =', month, 'i =', i
+            print 'flow_mean =', flow_mean, 'flow_mean_norm =', flow_norm
+        return ret
+    
+    def filter(self, flow_mean):
+        flow_norm = np.sum(flow_mean**2)**(1./2)
+        group_id = int(flow_norm / 2.)
+        if group_id > 5:
+            group_id = 5
+        return group_id
+                                  
+    def rescale(self, frame):
+        max_intensity = 10.
+        frame /= max_intensity
+        frame = frame * (frame <= 1.) + 1. * (frame > 1.)
+        frame = frame * (frame >= -1) - 1. * (frame < -1.)
+        return frame
+    
     def in_logical_matrix(self, center, radius):
         if center[0] - radius[0] >= 0 and center[0] + radius[0] <= self.logical_matrix_shape[2] and \
             center[1] - radius[1] >= 0 and center[1] + radius[1] <= self.logical_matrix_shape[3]:
@@ -715,7 +714,8 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
     def get_rain_status(self, month, i, center, last_rain):  
         assert self.predict_style == 'interval'
         if self.predict_style == 'interval':
-            if last_rain == 0:
+#            if last_rain == 0:
+            if True:
                 rain = self.matrix[month, 
                                i-self.predict_frame_size[0]+1:i+1, 
                                self.pad_border[0]+center[0],
@@ -821,8 +821,37 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         rmax = int(math.ceil(rmax * math.sqrt(2.)))
         radius = (rmax, rmax)
         return radius
-            
+             
     def get_track_frames(self, month, i, center, flow_mean):
+        radius = self.get_base_radius(flow_mean)
+        base_frames = self.get_frames(month, i, center, radius)
+        if base_frames is None:
+            return None
+        
+        flow_mean = flow_mean.reshape((1,2))
+        mag, ang = cv2.cartToPolar(flow_mean[:,0], flow_mean[:,1], angleInDegrees=True)
+        angle = ang[0,0]
+        rot_mat = cv2.getRotationMatrix2D((radius[1], radius[0]), angle, 1.0)
+        center0 = radius
+        flow = (mag[0,0], 0.)
+        self.flow_norms.append(flow[0])        ################################
+        
+        track_frames = np.zeros(self.train_frame_size)
+        for j in range(track_frames.shape[0]):
+            frame = base_frames[j]
+            rotated = cv2.warpAffine(frame, rot_mat, (frame.shape[1], frame.shape[0]))
+            dt_near = -(self.train_frame_size[0] + self.predict_interval - j)
+            dt_far = -(self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1 - j)
+            center_near = self.translate_coords(center0, flow, dt_near)
+            center_far = self.translate_coords(center0, flow, dt_far)
+            self.dc.append(center_near[1] - center_far[1])  ###########################
+            r = self.train_frame_radius
+            cropped = rotated[center_near[0] - r[0] : center_near[0] + r[0], 
+                            center_far[1] - r[1] : center_near[1] + r[1]]
+            track_frames[j] = cv2.resize(cropped, (cropped.shape[0], cropped.shape[0]))
+        return track_frames
+            
+    def get_track_frames_old(self, month, i, center, flow_mean):
         radius = self.get_base_radius(flow_mean)
         base_frames = self.get_frames(month, i, center, radius)
         if base_frames is None:
@@ -853,7 +882,7 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         radius = self.get_base_radius(flow_mean)
         base_frames = self.get_frames_ext(month, i, center, radius)
         if base_frames is None:
-            return None
+            return None, None
         
         flow_mean = flow_mean.reshape((1,2))
         mag, ang = cv2.cartToPolar(flow_mean[:,0], flow_mean[:,1], angleInDegrees=True)
@@ -863,6 +892,9 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
         flow = (mag[0,0], 0.)
         
         track_frames = np.zeros((self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0], 
+                                 self.train_frame_size[1],
+                                 self.train_frame_size[2]))
+        track_frames_show = np.zeros((self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0], 
                                  self.train_frame_size[1],
                                  self.train_frame_size[2]))
         for j in range(track_frames.shape[0]):
@@ -876,7 +908,14 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
             cropped = rotated[center_near[0] - r[0] : center_near[0] + r[0], 
                             center_far[1] - r[1] : center_near[1] + r[1]]
             track_frames[j] = cv2.resize(cropped, (cropped.shape[0], cropped.shape[0]))
-        return track_frames
+            
+            # mark two center on track_frames_show
+            rotated[center_near[0], center_near[1]] = -100.
+            rotated[center_far[0], center_far[1]] = -100.
+            cropped_show = rotated[center_near[0] - r[0] : center_near[0] + r[0], 
+                            center_far[1] - r[1] : center_near[1] + r[1]]
+            track_frames_show[j] = cv2.resize(cropped_show, (cropped.shape[0], cropped.shape[0]))
+        return track_frames, track_frames_show
                    
     def build_pred_func(self):
         model = serial.load(self.model_path)

@@ -1,0 +1,11 @@
+#train.py track1_12-36m_3x24x24-200_sample1-1-1-1.yaml
+#train.py track1_12-36m_3x24x24-200_sample.8-1-1-1.yaml
+#train.py track1_12-36m_3x24x24-200_sample.6-1-1-1.yaml
+#train.py track1_12-36m_3x24x24-200_sample.4-1-1-1.yaml
+#train.py track1_12-36m_3x24x24-maxoutconv16x16x32x2-pool2x2.yaml
+#train.py track1_12-36m_3x24x24-maxoutconv16x16x32x2-pool1x1.yaml
+#train.py track1_12-36m_3x24x24-maxoutconv14x14x32x2-pool2x2.yaml
+#train.py track1_12-36m_3x24x24-maxoutconv14x14x32x2-pool1x1.yaml
+#train.py track1_12-36m_3x12x12-maxoutc7x7x32x2-p2x2-c3x3x32x2-p2x2.yaml
+#train.py track1_12-36m_3x12x12-maxoutc7x7x32x2-p2x2-c3x3x64x2-p2x2.yaml
+train.py track1_12-36m_3x12x12-maxoutc7x7x64x2-p2x2-c3x3x64x2-p2x2.yaml

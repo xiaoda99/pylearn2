@@ -1,0 +1,158 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.cloudflow.CLOUDFLOW2 {
+                 which_set: 'train',
+                 num_examples: 550000,
+                 threshold: 3,
+                 pixnum_threshold: 1,
+                 prediv: 2,
+                 postdiv: 2,
+                 tdiv: 2,
+                 train_frame_size: [3,24,24],
+                 predict_frame_size: [3,1,1],
+                 predict_interval: 0,
+                 stride: [10,10],
+                 tstride: 1,
+                 data_files: ['radar_img_matrix_AZ9280_201407_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9280_201408_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9280_201409_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201406_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201407_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201408_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201409_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201406_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201407_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201408_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201409_uint8.pkl.gz',],
+                 examples_per_image: 100,
+                 video_shape: [7200, 477, 477],
+                 image_border: [88, 88],
+                 pad_border: [40, 40],
+                 predict_style: 'interval',
+                 track: False,
+                 sampling_rates: [.5, 1., 1., 1.],
+    },
+    model: !obj:pylearn2.models.mlp.MLP {
+        batch_size: 512,
+        layers: [ !obj:pylearn2.models.mlp.RectifiedLinear {
+                    layer_name: 'h0',
+                    dim: 200,
+                    irange: 0.0002,
+                },!obj:pylearn2.models.mlp.Sigmoid {
+                    layer_name: 'y',
+                    irange: .005,
+                    dim: 1,
+                    monitor_style: 'classification',
+                 }
+                ],
+        nvis: 432,
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: 512,
+        learning_rate: 0.01,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: .9
+        },
+        train_iteration_mode: 'even_shuffled_sequential',
+        monitor_iteration_mode: 'even_sequential',
+        monitoring_dataset:
+            {
+                'train' : *train,
+                'valid' : &valid !obj:pylearn2.datasets.cloudflow.CLOUDFLOW2 {
+                 which_set: 'valid',
+                 num_examples: 250000,
+                 threshold: 3,
+                 pixnum_threshold: 1,
+                 prediv: 2,
+                 postdiv: 2,
+                 tdiv: 2,
+                 train_frame_size: [3,24,24],
+                 predict_frame_size: [3,1,1],
+                 predict_interval: 0,
+                 stride: [10,10],
+                 tstride: 1,
+                 data_files: ['radar_img_matrix_AZ9280_201407_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9280_201408_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9280_201409_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201406_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201407_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201408_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201409_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201406_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201407_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201408_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201409_uint8.pkl.gz',],
+                 examples_per_image: 100,
+                 video_shape: [7200, 477, 477],
+                 image_border: [88, 88],
+                 pad_border: [40, 40],
+                 predict_style: 'interval',
+                 track: False,
+                 sampling_rates: [.5, 1., 1., 1.],
+                 },
+                'test' : &test !obj:pylearn2.datasets.cloudflow.CLOUDFLOW2 {
+                 which_set: 'test',
+                 num_examples: 350000,
+                 threshold: 3,
+                 pixnum_threshold: 1,
+                 prediv: 2,
+                 postdiv: 2,
+                 tdiv: 2,
+                 train_frame_size: [3,24,24],
+                 predict_frame_size: [3,1,1],
+                 predict_interval: 0,
+                 stride: [10,10],
+                 tstride: 1,
+                 data_files: ['radar_img_matrix_AZ9280_201407_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9280_201408_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9280_201409_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201406_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201407_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201408_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9010_201409_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201406_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201407_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201408_uint8.pkl.gz',
+                               'radar_img_matrix_AZ9200_201409_uint8.pkl.gz',],
+                 examples_per_image: 100,
+                 video_shape: [7200, 477, 477],
+                 image_border: [88, 88],
+                 pad_border: [40, 40],
+                 predict_style: 'interval',
+                 track: False,
+                 sampling_rates: [1., 1., 0., 0.],
+                 },
+            },
+        cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
+            !obj:pylearn2.costs.mlp.Default {
+            }, !obj:pylearn2.costs.mlp.WeightDecay {
+                coeffs: [.0001,.0001 ]
+            }          
+            ]
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.And {
+            criteria: [
+                !obj:pylearn2.termination_criteria.MonitorBased {
+                    channel_name: "valid_y_misclass",
+                    prop_decrease: 0.,
+                    N: 10
+                },
+                !obj:pylearn2.termination_criteria.EpochCounter {
+                    max_epochs: 100
+                }
+            ]
+        }
+},
+    extensions: [
+        !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+             channel_name: "valid_y_misclass",
+             save_path: "${PYLEARN2_TRAIN_FILE_FULL_STEM}_best.pkl"
+        },!obj:pylearn2.training_algorithms.sgd.OneOverEpoch {
+             start: 5,
+             half_life: 50,
+             min_lr: 0.00001
+        },
+    ],
+    save_path: "${PYLEARN2_TRAIN_FILE_FULL_STEM}.pkl",
+    save_freq: 1
+}
+
