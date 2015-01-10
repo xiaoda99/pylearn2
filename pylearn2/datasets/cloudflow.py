@@ -17,6 +17,18 @@ from pylearn2.datasets import dense_design_matrix
 from pylearn2.gui import patch_viewer
 from pylearn2.utils import serial
 
+default_data_files = ['radar_img_matrix_AZ9280_201407_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9280_201408_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9280_201409_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9010_201406_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9010_201407_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9010_201408_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9010_201409_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9200_201406_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9200_201407_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9200_201408_uint8.pkl.gz',
+                       'radar_img_matrix_AZ9200_201409_uint8.pkl.gz',]
+
 class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
     def __init__(self,  
                  which_set,
@@ -30,9 +42,8 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
                  filter_frame_size = (1,30,30),
                  predict_frame_size = (1,1,1),
                  predict_interval = 2,
-                 stride = (3,3),
                  tstride = 1,
-                 data_files = [],
+                 data_files = default_data_files,
                  axes=('c', 0, 1, 'b'),
                  examples_per_image = None,
                  video_shape = (7200, 477, 477),
@@ -473,8 +484,10 @@ class CLOUDFLOW2(dense_design_matrix.DenseDesignMatrix):
 #                    train_frames_ext = self.get_frames_ext(month, i, train_frame_center, self.train_frame_radius)
 #                    train_frames = train_frames_ext[:self.train_frame_size[0]]        
                     train_frames = self.get_frames(month, i, train_frame_center, self.train_frame_radius)
+                    
+                    frames = track_frames if self.track else train_frames
 
-                    last_rain = train_frames[-1, self.train_frame_size[1]/2, 
+                    last_rain = frames[-1, self.train_frame_size[1]/2, 
                                                 self.train_frame_size[2]/2] >= self.threshold       
                     rain = self.get_rain_status(month, i, train_frame_center, last_rain)  
                     
