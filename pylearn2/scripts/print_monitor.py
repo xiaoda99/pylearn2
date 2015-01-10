@@ -31,7 +31,9 @@ for model_path in sys.argv[1:]:
         predict = channels[which_set + '_y_' + 'predict'].val_record[-1]
         rain = channels[which_set + '_y_' + 'rain'].val_record[-1]
         predict_and_rain = channels[which_set + '_y_' + 'predict_and_rain'].val_record[-1]
-        false_positive = 1. - predict_and_rain * 1. / predict
-        false_negative = 1. - predict_and_rain * 1. / rain
-        print which_set + '_y_' + 'false_positive', ':', false_positive
-        print which_set + '_y_' + 'false_negative', ':', false_negative
+        precision = predict_and_rain * 1. / predict
+        recall = predict_and_rain * 1. / rain
+        f1 = 2. * precision * recall / (precision + recall)
+        print which_set + '_y_' + 'false_positive', ':', 1. - precision
+        print which_set + '_y_' + 'false_negative', ':', 1. - recall
+        print which_set + '_y_' + 'false_f1', ':', f1
