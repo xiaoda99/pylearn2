@@ -10,40 +10,25 @@ import numpy as np
 
 test = CLOUDFLOW2(  
                  which_set='test',
-                 num_examples=350000,
-                 threshold=3,
+                 num_examples=400000,
+                 threshold=2,
                  pixnum_threshold = 1,
                  prediv = 2,
                  postdiv = 2,
                  tdiv = 2,
                  train_frame_size = (3,24,24),
                  filter_frame_size = (1,30,30),
-                 predict_frame_size = (3,1,1),
-                 predict_interval = 0,
-                 stride = (3,3),
+                 predict_frame_size = (2,1,1),
+                 predict_interval = 2,
                  tstride = 1,
-                 data_files = ['radar_img_matrix_AZ9280_201407_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9280_201408_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9280_201409_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9010_201406_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9010_201407_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9010_201408_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9010_201409_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9200_201406_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9200_201407_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9200_201408_uint8.pkl.gz',
-                               'radar_img_matrix_AZ9200_201409_uint8.pkl.gz',],
                  examples_per_image = 100,
                  video_shape = (7200, 477, 477),
                  image_border=(88, 88),
                  pad_border=(40, 40),
-                 train_slot=50,   # 5 hours
-                 valid_slot=20,   # 2 hours
-                 test_slot=30,   # 3 hours
                  predict_style='interval',
                  track=True,
-                 sampling_rates=(1., 1., 0., 0.),
-                 run_test=None
+                 sampling_rates=(1., 1., 1., 1.),
+                 run_test=True
                  )
 #test.gen_random_examples2(test_mode=True)
 """
