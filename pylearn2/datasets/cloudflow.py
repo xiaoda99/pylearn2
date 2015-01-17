@@ -31,6 +31,11 @@ default_data_files = ['radar_img_matrix_AZ9280_201407_uint8.pkl.gz',
                        ]
 
 class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
+    matrix = None
+    flow = None
+    X_large = {}
+    y_large = {}
+    
     def __init__(self,  
                  which_set,
                  num_examples,
@@ -62,20 +67,17 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                  ):
 
         assert predict_style in ['interval', 'point']
-#        if which_set == 'test':
-#            sampling_rates = (.3, 1., 0., 0.)
         self.__dict__.update(locals())
         del self.self
         print '\nBuilding', which_set, 'set...'
-
-        assert self.train_frame_size[1] % 2 == 1 and self.train_frame_size[2] % 2 == 1
-        self.train_frame_radius = ((self.train_frame_size[1]-1)/2, (self.train_frame_size[2]-1)/2)     
+        
         self.image_border = (np.ceil(image_border[0]/prediv), 
                              np.ceil(image_border[1]/prediv))
-
-        self.init_slots()
+        assert self.train_frame_size[1] % 2 == 1 and self.train_frame_size[2] % 2 == 1
+        self.train_frame_radius = ((self.train_frame_size[1]-1)/2, (self.train_frame_size[2]-1)/2)         
+        self.init_slots()        
+        self.init_defaults()
         
-        print 'Preallocating matrix and flow ...'
         nmonth = len(data_files)
         self.logical_matrix_shape = (nmonth,
                     np.ceil(video_shape[0]*1./tdiv), 
@@ -85,16 +87,45 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     np.ceil(video_shape[0]*1./tdiv), 
                     np.round(video_shape[1]*1./prediv - self.image_border[0]*2 + self.pad_border[0]*2), 
                     np.round(video_shape[2]*1./prediv - self.image_border[1]*2 + self.pad_border[1]*2))
-        print 'physical_matrix_shape =', physical_matrix_shape
-        self.matrix = np.zeros(physical_matrix_shape, dtype='uint8')
         
         flow_shape = (nmonth,
                     np.ceil(video_shape[0]*1./tdiv), 
                     np.round(video_shape[1]*1./prediv/postdiv - self.image_border[0]/2*2), # flow's border is border/2
                     np.round(video_shape[2]*1./prediv/postdiv - self.image_border[1]/2*2),
                     2)
-        self.flow = np.zeros(flow_shape, dtype='int8')
-        print 'Preallocating matrix and flow done.'
+        if CLOUDFLOW.matrix is not None:
+            assert CLOUDFLOW.matrix.shape == physical_matrix_shape
+            assert CLOUDFLOW.flow.shape == flow_shape
+        else:
+            print 'Preallocating matrix and flow ...'
+            CLOUDFLOW.matrix = np.zeros(physical_matrix_shape, dtype='uint8')
+            CLOUDFLOW.flow = np.zeros(flow_shape, dtype='int8')
+            print 'Preallocating matrix and flow done.'
+            
+            data_dir = '/home/yuanxy/projects/nowcasting/data/'
+            for month in range(len(data_files)):
+                data_file = data_files[month]
+                print '\n',data_file
+    #            ramdisk_root = '/mnt/ramdisk/'
+                ramdisk_root = '/home/xd/ramdisk_backup/'
+                npy_file = ramdisk_root + data_file.replace('.pkl.gz', '.npy')
+                npy_flow_file = ramdisk_root + data_file.replace('.pkl.gz', '_flow256.npy')
+                assert os.path.isfile(npy_file)
+                if os.path.isfile(npy_file):
+                    print 'Cached. Loading data from ramdisk...'
+                    matrix = np.load(npy_file)[:, self.image_border[0] : -self.image_border[0], 
+                                               self.image_border[1] : -self.image_border[1]]
+                    flow = np.load(npy_flow_file)[:, self.image_border[0]/2 : -self.image_border[0]/2, 
+                                               self.image_border[1]/2 : -self.image_border[1]/2]
+                    #pad_width = ((0,0), (pad_border[0], pad_border[0]), (pad_border[1], pad_border[1]))
+                    #self.matrix[month] = np.lib.pad(matrix, pad_width, 'constant')  # too slow
+                    CLOUDFLOW.matrix[month, :, pad_border[0]:-pad_border[0], pad_border[1]:-pad_border[1]] = matrix
+                    CLOUDFLOW.flow[month] = (flow.astype('int') - 128).astype('int8')
+                    print 'done.'
+
+        
+        if run_test is None:
+            return   # for show_random_examples()
         
         dummy_frame = np.zeros((self.train_frame_size[1], self.train_frame_size[2]))
         ds_shape = cv2.resize(dummy_frame, (0,0), fx=1./self.postdiv, fy=1./self.postdiv).shape
@@ -104,96 +135,14 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     (self.predict_frame_size[1]) * \
                     (self.predict_frame_size[2]) 
 
-        print 'Preallocating X and y...'
-        self.X_large = np.zeros((num_examples, self.train_dim), dtype='uint8')
-        self.y_large = np.zeros((num_examples, self.predict_dim), dtype='uint8')
-        print 'Preallocating X and y done.' 
-        
-        data_dir = '/home/yuanxy/projects/nowcasting/data/'
-        for month in range(len(data_files)):
-            data_file = data_files[month]
-            print '\n',data_file
-#            ramdisk_root = '/mnt/ramdisk/'
-            ramdisk_root = '/home/xd/ramdisk_backup/'
-            npy_file = ramdisk_root + data_file.replace('.pkl.gz', '.npy')
-            npy_flow_file = ramdisk_root + data_file.replace('.pkl.gz', '_flow256.npy')
-            if os.path.isfile(npy_file):
-                print 'Cached. Loading data from ramdisk...'
-                matrix = np.load(npy_file)[:, self.image_border[0] : -self.image_border[0], 
-                                           self.image_border[1] : -self.image_border[1]]
-                flow = np.load(npy_flow_file)[:, self.image_border[0]/2 : -self.image_border[0]/2, 
-                                           self.image_border[1]/2 : -self.image_border[1]/2]
-                #pad_width = ((0,0), (pad_border[0], pad_border[0]), (pad_border[1], pad_border[1]))
-                #self.matrix[month] = np.lib.pad(matrix, pad_width, 'constant')  # too slow
-                self.matrix[month, :, pad_border[0]:-pad_border[0], pad_border[1]:-pad_border[1]] = matrix
-                self.flow[month] = (flow.astype('int') - 128).astype('int8')
-                print 'done.'
-            else:
-                print 'Loading data from disk and computing flow...'
-                t0 = time.time()
-                f = gzip.open(data_dir + data_file)
-                #matrix = np.zeros(video_shape, dtype='uint8')
-                matrix *= 0
-                flow *= 0.0
-                for i in xrange(video_shape[0]):
-                    try:
-                        t,pix = cPickle.load(f)
-                        pix = pix * (pix < 255)
-                        #Gaussian_pix = cv2.GaussianBlur(pix,(5,5),sigmaX=0)               
-                        #matrix[i] = Gaussian_pix
-                        if "AZ9280" in data_file:  # for chengdu
-                            border = [(pix.shape[0] - video_shape[1]) / 2,
-                                      (pix.shape[1] - video_shape[2]) / 2]
-                            pix = pix[border[0]:pix.shape[0]-border[0],
-                                      border[1]:pix.shape[1]-border[1]]
-                        matrix[i] = pix
-                        
-                        if i == 0:
-                            continue
-#                        flow = flow[image_border[0]:video_shape[1]-image_border[0],
-#                                    image_border[1]:video_shape[2]-image_border[1],
-#                                    :]
-                        flow_i, _ = get_normalized_flow(matrix[i-1:i+1])
-                                
-                        # downsample inplace to save memory
-                        flow[i] = cv2.resize(flow_i, (0, 0), fx=1./prediv/postdiv, fy=1./prediv/postdiv) 
-                    except Exception, e:
-                        traceback.print_exc()
-                        break;
-                f.close()
-                self.matrix = matrix
-                t1 = time.time()
-                print 'done.', t1 - t0, 'seconds'     
-            
-                if prediv != 1:
-                    print 'Downsampling...'
-                    ds *= 0.0
-                    for i in range(video_shape[0]):
-                        ds[i] = cv2.resize(matrix[i].astype('float'), (0, 0), fx=1./prediv, fy=1./prediv)
-                    self.matrix = ds.reshape((ds_shape[0], tdiv, ds_shape[1], ds_shape[2])
-                                    ).mean(axis=1).round().astype('uint8')
-
-#                    flowds = flow # spatial downsampling has already been done
-#                    self.flow = (flowds.reshape((flowds.shape[0]/tdiv, tdiv, flowds.shape[1], flowds.shape[2], flowds.shape[3])).mean(axis=1)
-#                                 + 8.).clip(min=0.0).round().astype('uint8') 
-                    flowds = flow.reshape((flow.shape[0]/tdiv, tdiv, flow.shape[1], flow.shape[2], flow.shape[3])).mean(axis=1)
-                    maxval = 12.
-                    minval = -12.
-                    flowds[flowds > maxval] = maxval
-                    flowds[flowds < minval] = minval
-                    flowds = (flowds * 10.) + 128.  # in range [128-120, 128+120]
-                    self.flow = flowds.round().astype('uint8')
-                    print 'done.'
-                
-                print 'Caching data to ramdisk...'
-                np.save(npy_file, self.matrix)
-                np.save(npy_flow_file, self.flow)
-                print 'done.'
-                
-        self.init_defaults()
-        
-        if run_test is None:
-            return   # for show_random_examples()
+        if self.which_set in CLOUDFLOW.X_large:
+            assert CLOUDFLOW.X_large[self.which_set].shape == (num_examples, self.train_dim)
+            assert CLOUDFLOW.y_large[self.which_set].shape == (num_examples, self.predict_dim)
+        else:
+            print 'Preallocating X and y...'
+            CLOUDFLOW.X_large[self.which_set] = np.zeros((num_examples, self.train_dim), dtype='uint8')
+            CLOUDFLOW.y_large[self.which_set] = np.zeros((num_examples, self.predict_dim), dtype='uint8')
+            print 'Preallocating X and y done.' 
         
         self.gen_random_examples2(run_test)
         
@@ -202,8 +151,8 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                  self.train_frame_size[0]   #frames, i.e. channels
                  )     
         view_converter = dense_design_matrix.DefaultViewConverter(shape, self.axes)
-        super(CLOUDFLOW,self).__init__(X = self.X_large[:self.example_cnt], 
-                                        y = self.y_large[:self.example_cnt], 
+        super(CLOUDFLOW,self).__init__(X = CLOUDFLOW.X_large[self.which_set][:self.example_cnt], 
+                                        y = CLOUDFLOW.y_large[self.which_set][:self.example_cnt], 
                                         view_converter = view_converter)
         
     def init_slots(self):
@@ -383,16 +332,22 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         
         self.dc = []
         self.flow_norms = []
-        for month in range(self.matrix.shape[0]):
+        for month in range(CLOUDFLOW.matrix.shape[0]):
             print 'month =', month
             for i in range(self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1, 
-                            self.matrix.shape[1]):
+                            CLOUDFLOW.matrix.shape[1]):
                 if not self.usable(i):
                     continue
                 for _ in range(self.examples_per_image):
                     h_center = np.random.randint(h_center_low, h_center_high)
                     w_center = np.random.randint(w_center_low, w_center_high)
                     predict_frame_center = train_frame_center = (h_center, w_center)    
+                    
+#                    filter_frames = self.get_frames(month, i, train_frame_center, 
+#                                                (self.filter_frame_size[1]/2, self.filter_frame_size[2]/2))
+#                    filter_frames = filter_frames[-self.filter_frame_size[0]:]
+#                    if np.sum(filter_frames >= self.threshold) < 1:
+#                        continue
                     
                     flow_frame, flow_mean, flow_center = self.get_flow_frame(month, i, train_frame_center, self.train_frame_radius)
                     
@@ -436,8 +391,8 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                         if self.frame_diff:
                             ds = self.diff(ds)
                         x = ds.round().astype('uint8').flatten()
-                        self.X_large[self.example_cnt] = x
-                        self.y_large[self.example_cnt, 0] = rain
+                        CLOUDFLOW.X_large[self.which_set][self.example_cnt] = x
+                        CLOUDFLOW.y_large[self.which_set][self.example_cnt, 0] = rain
                     else:
                         assert self.which_set == 'test'
                         group_id = self.filter(flow_mean)
@@ -529,10 +484,10 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         models = [nn, tracknn, flow, persistent]
         
         while True:
-            month = np.random.randint(self.matrix.shape[0])
+            month = np.random.randint(CLOUDFLOW.matrix.shape[0])
             month = 10
             i = np.random.randint(self.train_frame_size[0] + self.predict_interval + self.predict_frame_size[0] - 1, 
-                                  self.matrix.shape[1])
+                                  CLOUDFLOW.matrix.shape[1])
             if not self.usable(i):
                 continue
             
@@ -676,20 +631,20 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         if self.predict_style == 'interval':
 #            if last_rain == 0:
             if True:
-                rain = self.matrix[month, 
+                rain = CLOUDFLOW.matrix[month, 
                                i-self.predict_frame_size[0]+1:i+1, 
                                self.pad_border[0]+center[0],
                                self.pad_border[1]+center[1]
                             ].max() >= self.threshold
             else:
-                rain = self.matrix[month, 
+                rain = CLOUDFLOW.matrix[month, 
                                i-self.predict_frame_size[0]+1:i+1, 
                                self.pad_border[0]+center[0],
                                self.pad_border[1]+center[1]
                             ].min() >= self.threshold
         else:
             for j in range(self.predict_frame_size[0]):
-                rain = self.matrix[month,
+                rain = CLOUDFLOW.matrix[month,
                                i - self.predict_frame_size[0] + 1 + j, 
                                self.pad_border[0]+center[0], 
                                self.pad_border[1]+center[1]] >= self.threshold
@@ -697,10 +652,10 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                                
     def get_frames(self, month, i, center, radius):
         if self.pad_border[0] + center[0] - radius[0] >= 0 and \
-                self.pad_border[0] + center[0] + radius[0] < self.matrix.shape[2] and \
+                self.pad_border[0] + center[0] + radius[0] < CLOUDFLOW.matrix.shape[2] and \
                 self.pad_border[1] + center[1] - radius[1] >= 0 and \
-                self.pad_border[1] + center[1] + radius[1] < self.matrix.shape[3]:
-            return self.matrix[month,
+                self.pad_border[1] + center[1] + radius[1] < CLOUDFLOW.matrix.shape[3]:
+            return CLOUDFLOW.matrix[month,
                         i-self.train_frame_size[0]-self.predict_interval-self.predict_frame_size[0]+1:
                         i-self.predict_interval-self.predict_frame_size[0]+1,
                         self.pad_border[0]+center[0]-radius[0] : self.pad_border[0]+center[0]+radius[0]+1,
@@ -711,7 +666,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         
     def get_flow_frame(self, month, i, center, radius):
         assert radius[0] % self.postdiv == 0 and radius[1] % self.postdiv == 0
-        flow_frame = self.flow[month,
+        flow_frame = CLOUDFLOW.flow[month,
                     i-self.predict_interval-self.predict_frame_size[0],
                     center[0]/self.postdiv - radius[0]/self.postdiv:
                     center[0]/self.postdiv + radius[0]/self.postdiv+1,
@@ -727,10 +682,10 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
     # used by show_random_examples()
     def get_frames_ext(self, month, i, center, radius):
         if self.pad_border[0] + center[0] - radius[0] >= 0 and \
-                self.pad_border[0] + center[0] + radius[0] < self.matrix.shape[2] and \
+                self.pad_border[0] + center[0] + radius[0] < CLOUDFLOW.matrix.shape[2] and \
                 self.pad_border[1] + center[1] - radius[1] >= 0 and \
-                self.pad_border[1] + center[1] + radius[1] < self.matrix.shape[3]:
-            return self.matrix[month,
+                self.pad_border[1] + center[1] + radius[1] < CLOUDFLOW.matrix.shape[3]:
+            return CLOUDFLOW.matrix[month,
                         i-self.train_frame_size[0]-self.predict_interval-self.predict_frame_size[0]+1:
                         i+1,
                         self.pad_border[0]+center[0]-radius[0] : self.pad_border[0]+center[0]+radius[0]+1,
@@ -740,7 +695,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
             return None
      
     def get_point_value(self, month, i, point_coords):
-        return self.matrix[month, i, self.pad_border[0]+point_coords[0], self.pad_border[1]+point_coords[1]]
+        return CLOUDFLOW.matrix[month, i, self.pad_border[0]+point_coords[0], self.pad_border[1]+point_coords[1]]
         
     def translate_coords(self, point_coords, flow, dt):          
         dx = flow[1] * dt * self.tdiv / self.prediv
@@ -752,7 +707,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         dt_far = -(self.predict_interval + self.predict_frame_size[0])
         center_near = self.translate_coords(center, flow, dt_near)
         center_far = self.translate_coords(center, flow, dt_far)
-        last_frame = self.matrix[month,
+        last_frame = CLOUDFLOW.matrix[month,
                         i-self.predict_interval-self.predict_frame_size[0],
                         self.pad_border[0] : -self.pad_border[0],
                         self.pad_border[1] : -self.pad_border[1]

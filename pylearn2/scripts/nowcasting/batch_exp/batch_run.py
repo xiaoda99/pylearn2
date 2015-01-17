@@ -84,10 +84,19 @@ hyperparams_list = [
 
 base = 'sampling'
 hyperparams_list = [
-                    OrderedDict([('rit', 1.), ('sr', 1.)]),
-                    OrderedDict([('rit', 1.), ('sr', .8)]),
-                    OrderedDict([('rit', 1.), ('sr', .6)]),
-                    OrderedDict([('rit', 1.), ('sr', .4)]),
+                    OrderedDict([('rit', .20), ('sr', 1.)]),
+                    OrderedDict([('rit', .18), ('sr', 1.)]),
+                    OrderedDict([('rit', .16), ('sr', 1.)]),
+                    OrderedDict([('rit', .14), ('sr', 1.)]),
+                    OrderedDict([('rit', .12), ('sr', 1.)]),
+#                    OrderedDict([('rit', .1), ('sr', 1.)]),
+#                    OrderedDict([('rit', .08), ('sr', 1.)]),
+#                    OrderedDict([('rit', .06), ('sr', 1.)]),
+#                    OrderedDict([('rit', .04), ('sr', 1.)]),
+#                    OrderedDict([('rit', 1.), ('sr', 1.)]),
+#                    OrderedDict([('rit', 1.), ('sr', .8)]),
+#                    OrderedDict([('rit', 1.), ('sr', .6)]),
+#                    OrderedDict([('rit', 1.), ('sr', .4)]),
                     ]
 
 yaml_template = open(base + '_template.yaml', 'r').read()
