@@ -1,4 +1,4 @@
-from pylearn2.datasets.cloudflow import CLOUDFLY, CLOUDFLOW, CLOUDFLOW2
+from pylearn2.datasets.cloudflow import CLOUDFLOW
 import math
 import cv2
 import pylab as plt
@@ -8,27 +8,26 @@ import numpy as np
 #valid:31
 #test:46
 
-test = CLOUDFLOW2(  
+test = CLOUDFLOW(  
                  which_set='test',
                  num_examples=400000,
                  threshold=2,
-                 pixnum_threshold = 1,
                  prediv = 2,
                  postdiv = 2,
                  tdiv = 2,
-                 train_frame_size = (3,24,24),
-                 filter_frame_size = (1,30,30),
+                 train_frame_size = (3,25,25),
                  predict_frame_size = (2,1,1),
                  predict_interval = 2,
                  tstride = 1,
-                 examples_per_image = 100,
+                 examples_per_image = 50,
                  video_shape = (7200, 477, 477),
                  image_border=(88, 88),
                  pad_border=(40, 40),
                  predict_style='interval',
                  track=True,
-                 sampling_rates=(1., 1., 1., 1.),
-                 run_test=True
+                 sampling_rates=(.5, 1., 1., 1.),
+                 rain_index_threshold=.1,
+                 run_test=False
                  )
 #test.gen_random_examples2(test_mode=True)
 """
