@@ -16,7 +16,7 @@
                  pad_border: [40, 40],
                  predict_style: 'interval',
                  track: 1,
-                 rain_index_threshold: %(rit)i,
+                 rain_index_threshold: %(rit)f,
                  sampling_rates: [%(sr)f, 1., 1., 1.],
     },
     model: !obj:pylearn2.models.mlp.MLP {
@@ -64,7 +64,7 @@
                  pad_border: [40, 40],
                  predict_style: 'interval',
                  track: 1,
-                 rain_index_threshold: %(rit)i,
+                 rain_index_threshold: %(rit)f,
                  sampling_rates: [%(sr)f, 1., 1., 1.],
                  },
                 'test' : &test !obj:pylearn2.datasets.cloudflow.CLOUDFLOW {
