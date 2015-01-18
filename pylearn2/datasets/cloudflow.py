@@ -184,17 +184,11 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         self.show_right = False
         self.show_right_track = None
         self.showdiv = 2
-        self.model_base = '/home/xd/projects/pylearn2/pylearn2/scripts/nowcasting/tracking/cnn/'
-#        self.model_path = self.model_base + 'track0_12-36m_3x24x24-200_sample.5-1-1-1_best.pkl'
-#        self.model_path_track = self.model_base + 'track1_12-36m_3x24x24-200_sample.5-1-1-1_best.pkl'
-        self.model_path = self.model_base + 'mlp_track0_sample0.600000_best.pkl'
-        self.model_path_track = self.model_base + 'mlp_track1_sample0.600000_best.pkl'
-        self.model_path = self.model_base + 'mlp_track0_sample0.600000_best.pkl'
-        self.model_path_track = self.model_base + 'mlp_track1_sample0.600000_best.pkl'
+        self.model_base = '/home/xd/projects/pylearn2/pylearn2/scripts/nowcasting/batch_exp/'
+        self.model_path = self.model_base + 'sampling_rit1.0_sr0.6_best.pkl'
+        self.model_path_track = self.model_base + 'sampling_rit1.0_sr0.6_best.pkl'
         self.cnts_total = np.zeros(4, dtype='int32')
         self.cnts_sampled = np.zeros(4, dtype='int32')
-#        self.cnts_total_track = np.zeros(4, dtype='int32')
-#        self.cnts_sampled_track = np.zeros(4, dtype='int32')
         self.min_flow_norm = 4.
         self.max_flow_norm = 6.
         
@@ -298,6 +292,24 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         self.cnts_sampled[type] += sampled
         return sampled
         
+    def compare_models(self, rain, pred0, pred1, model_pair):
+        if not rain and not pred0 and not pred1:
+            return
+        model_pair['m0_wrong'] += (pred0 != rain)
+        model_pair['m1_wrong'] += (pred1 != rain)
+        model_pair['both_wrong'] += (pred0 != rain) * (pred1 != rain)
+        
+    def record_predictions(self, rain, pred, pred_stat, mean_intensity, flow_norm):
+        if not rain and not pred:
+            return
+        pred_stat.append((mean_intensity, flow_norm, (rain == pred)))
+        
+    def show_predictions(self, pred_stat):
+        pass
+    
+    def compute_mean_intensity(self, frames):
+        return frames.sum() * 1. / (frames > 0.).sum()
+        
     def gen_random_examples2(self, test_mode=False):
         print 'Generating random examples ...'
         t0 = time.time()
@@ -318,7 +330,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
             model_template = {'pred':0, 'npred':0, 'nrain':0, 'npred&rain':0}
             models = {}
             models['flow'] = model_template.copy()
-            models['nn'] = model_template.copy()
+#            models['nn'] = model_template.copy()
             models['tracknn'] = model_template.copy()
             groups = {}
             from copy import deepcopy
@@ -328,7 +340,9 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
             groups[3] = deepcopy(models)   # 6~8
             groups[4] = deepcopy(models)   # 8~10
             groups[5] = deepcopy(models)   # 10~12
-            nn_wrong = 0; tracknn_wrong = 0; both_wrong = 0
+            
+            model_pair = {'m0_wrong':0, 'm1_wrong':0, 'both_wrong':0}
+            self.pred_stat = []
         
         self.dc = []
         self.flow_norms = []
@@ -395,26 +409,24 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                         CLOUDFLOW.y_large[self.which_set][self.example_cnt, 0] = rain
                     else:
                         assert self.which_set == 'test'
-                        group_id = self.filter(flow_mean)
+                        flow_norm = np.sum(flow_mean**2)**(1./2)
+                        group_id = self.filter(flow_norm)
                         models_in_group = groups[group_id]
                         
                         rain_prob_track = self.predict_rain_prob(track_frames, pred_func_track)
-                        models['tracknn']['pred'] = rain_prob_track >= 0.5
-                        models_in_group['tracknn']['pred'] = rain_prob_track >= 0.5
-                        rain_prob = self.predict_rain_prob(train_frames, pred_func)
-                        models['nn']['pred'] = rain_prob >= 0.5
-                        models_in_group['nn']['pred'] = rain_prob >= 0.5
+                        pred_track = rain_prob_track >= 0.5
+                        models['tracknn']['pred'] = pred_track
+                        models_in_group['tracknn']['pred'] = pred_track
+#                        rain_prob = self.predict_rain_prob(train_frames, pred_func)
+#                        models['nn']['pred'] = rain_prob >= 0.5
+#                        models_in_group['nn']['pred'] = rain_prob >= 0.5
                         
 #                        ensemble['pred'] = (rain_prob_track + rain_prob) / 2. >= 0.5
                         
                         rain_prob_flow, traceback_vals = self.pred_func_flow(month, i, train_frame_center, flow_mean)
-                        models['flow']['pred'] = rain_prob_flow >= 0.5
-                        models_in_group['flow']['pred'] = rain_prob_flow >= 0.5
-                                                    
-#                        persistent['pred'] = last_rain
-                        
-#                        if not self.filtered(last_rain, rain, rain_prob_track, flow_mean, month, i):
-#                            continue
+                        pred_flow = rain_prob_flow >= 0.5
+                        models['flow']['pred'] = pred_flow
+                        models_in_group['flow']['pred'] = pred_flow
                                                 
                         for model_name in models:
                             model = models[model_name]
@@ -428,14 +440,16 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                             model['nrain'] += rain
                             model['npred&rain'] += (model['pred'] * rain)
                             
-            if test_mode:
-                pprint(models)
-                pprint(groups)            
+                        self.compare_models(rain, pred_flow, pred_track, model_pair)
+                        mean_intensity = self.compute_mean_intensity(track_frames_ext)
+                        self.record_predictions(rain, pred_track, self.pred_stat, mean_intensity, flow_norm)
+                                  
             print 'example_cnt =', self.example_cnt
             print 'cnts_total =', self.cnts_total
-            print 'cnts_sampled =', self.cnts_sampled
-#            print 'cnts_total_track =', self.cnts_total_track
-#            print 'cnts_sampled_track =', self.cnts_sampled_track
+            print 'cnts_sampled =', self.cnts_sampled   
+            if test_mode:
+                pprint(models)
+                pprint(groups)   
               
         t1 = time.time()
         print 'Done. Total =', self.example_cnt, 'Time:', t1 - t0
@@ -465,6 +479,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
 #            print 'nn_wrong =', nn_wrong, 'tracknn_wrong =', tracknn_wrong, 'both_wrong =', both_wrong,
             pprint(models)
             pprint(groups) 
+            print model_pair
                
     def show_random_examples(self):
         h_center_low = self.train_frame_size[1]/2*self.showdiv
@@ -598,8 +613,8 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
             print 'flow_mean =', flow_mean, 'flow_mean_norm =', flow_norm
         return ret
     
-    def filter(self, flow_mean):
-        flow_norm = np.sum(flow_mean**2)**(1./2)
+    def filter(self, flow_norm):
+#        flow_norm = np.sum(flow_mean**2)**(1./2)
         group_id = int(flow_norm / 2.)
         if group_id > 5:
             group_id = 5

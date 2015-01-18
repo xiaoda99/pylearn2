@@ -25,9 +25,9 @@ test = CLOUDFLOW(
                  pad_border=(40, 40),
                  predict_style='interval',
                  track=True,
-                 sampling_rates=(.5, 1., 1., 1.),
-                 rain_index_threshold=.1,
-                 run_test=False
+                 sampling_rates=(1., 1., 1., 1.),
+                 rain_index_threshold=1.,
+                 run_test=True
                  )
 #test.gen_random_examples2(test_mode=True)
 """

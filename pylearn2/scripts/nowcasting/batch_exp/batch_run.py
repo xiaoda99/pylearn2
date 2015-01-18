@@ -84,11 +84,11 @@ hyperparams_list = [
 
 base = 'sampling'
 hyperparams_list = [
-                    OrderedDict([('rit', .20), ('sr', 1.)]),
-                    OrderedDict([('rit', .18), ('sr', 1.)]),
-                    OrderedDict([('rit', .16), ('sr', 1.)]),
-                    OrderedDict([('rit', .14), ('sr', 1.)]),
-                    OrderedDict([('rit', .12), ('sr', 1.)]),
+#                    OrderedDict([('rit', .2), ('sr', 1.)]),
+                    OrderedDict([('rit', .3), ('sr', 1.)]),
+                    OrderedDict([('rit', .4), ('sr', 1.)]),
+                    OrderedDict([('rit', .5), ('sr', 1.)]),
+                    OrderedDict([('rit', .6), ('sr', 1.)]),
 #                    OrderedDict([('rit', .1), ('sr', 1.)]),
 #                    OrderedDict([('rit', .08), ('sr', 1.)]),
 #                    OrderedDict([('rit', .06), ('sr', 1.)]),
@@ -97,6 +97,13 @@ hyperparams_list = [
 #                    OrderedDict([('rit', 1.), ('sr', .8)]),
 #                    OrderedDict([('rit', 1.), ('sr', .6)]),
 #                    OrderedDict([('rit', 1.), ('sr', .4)]),
+                    ]
+
+base = 'longer'
+hyperparams_list = [
+                    OrderedDict([('interval', 2), ('sr', 1.)]),
+                    OrderedDict([('interval', 4), ('sr', 1.)]),
+                    OrderedDict([('interval', 7), ('sr', 1.)]),
                     ]
 
 yaml_template = open(base + '_template.yaml', 'r').read()
