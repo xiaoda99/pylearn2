@@ -106,6 +106,13 @@ hyperparams_list = [
                     OrderedDict([('interval', 7), ('sr', 1.)]),
                     ]
 
+base = 'threshold'
+hyperparams_list = [
+                    OrderedDict([('th', 2), ('sr', 1.)]),
+                    OrderedDict([('th', 3), ('sr', 1.)]),
+                    OrderedDict([('th', 4), ('sr', 1.)]),
+                    ]
+
 yaml_template = open(base + '_template.yaml', 'r').read()
 results_path = base + '_results.txt'
 for hyperparams in hyperparams_list:

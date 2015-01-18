@@ -115,6 +115,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     print 'Cached. Loading data from ramdisk...'
                     matrix = np.load(npy_file)[:, self.image_border[0] : -self.image_border[0], 
                                                self.image_border[1] : -self.image_border[1]]
+                    matrix = matrix * (matrix >= self.threshold)
                     flow = np.load(npy_flow_file)[:, self.image_border[0]/2 : -self.image_border[0]/2, 
                                                self.image_border[1]/2 : -self.image_border[1]/2]
                     #pad_width = ((0,0), (pad_border[0], pad_border[0]), (pad_border[1], pad_border[1]))
@@ -122,7 +123,6 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     CLOUDFLOW.matrix[month, :, pad_border[0]:-pad_border[0], pad_border[1]:-pad_border[1]] = matrix
                     CLOUDFLOW.flow[month] = (flow.astype('int') - 128).astype('int8')
                     print 'done.'
-
         
         if run_test is None:
             return   # for show_random_examples()
@@ -309,7 +309,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         elif pred0 == rain and pred1 != rain:
             type = 2
         else:
-            type = 4
+            type = 3
         pred_stat.append((mean_intensity, flow_norm, type))
         
     def show_predictions(self, pred_stat):

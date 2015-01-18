@@ -30,6 +30,14 @@ test = CLOUDFLOW(
                  run_test=True
                  )
 #test.gen_random_examples2(test_mode=True)
+
+def show_predictions(pred_stat):
+    for pred in pred_stat:
+        if pred[2] == 0:
+            plt.plot(pred[0], pred[1], 'g.')
+        if pred[2] == 4:
+            plt.plot(pred[0], pred[1], 'r.')
+    plt.show()
 """
 month, i, center, flow_mean  = test.show_random_examples(10000)
 self = test
