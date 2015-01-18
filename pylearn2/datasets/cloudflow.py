@@ -299,10 +299,18 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         model_pair['m1_wrong'] += (pred1 != rain)
         model_pair['both_wrong'] += (pred0 != rain) * (pred1 != rain)
         
-    def record_predictions(self, rain, pred, pred_stat, mean_intensity, flow_norm):
-        if not rain and not pred:
+    def record_predictions(self, rain, pred0, pred1, pred_stat, mean_intensity, flow_norm):
+        if not rain and not pred0 and not pred1:
             return
-        pred_stat.append((mean_intensity, flow_norm, (rain == pred)))
+        if pred0 == rain and pred1 == rain:
+            type = 0
+        elif pred0 != rain and pred1 == rain:
+            type = 1
+        elif pred0 == rain and pred1 != rain:
+            type = 2
+        else:
+            type = 4
+        pred_stat.append((mean_intensity, flow_norm, type))
         
     def show_predictions(self, pred_stat):
         pass
@@ -442,7 +450,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                             
                         self.compare_models(rain, pred_flow, pred_track, model_pair)
                         mean_intensity = self.compute_mean_intensity(track_frames_ext)
-                        self.record_predictions(rain, pred_track, self.pred_stat, mean_intensity, flow_norm)
+                        self.record_predictions(rain, pred_flow, pred_track, self.pred_stat, mean_intensity, flow_norm)
                                   
             print 'example_cnt =', self.example_cnt
             print 'cnts_total =', self.cnts_total
