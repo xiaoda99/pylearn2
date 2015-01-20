@@ -1,0 +1,8 @@
+rain = True tracknn[prob] = 0.463072 flow[prob] = False
+flow_mean = [ 3.28934911  1.56272189]
+mean_intensities : 2.49657064472 1.13496425231 0.874164691563
+center_vals = [ 4.  1.]
+traceback vals = [1.0, 1.0, 1.0, 0.0]
+
+1. low intensities below threshold should not be removed, or growth can not be captured.
+2. tracknn is sentitive to intensities, it did not predict because intensity is too low.

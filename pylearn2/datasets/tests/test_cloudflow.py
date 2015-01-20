@@ -25,13 +25,18 @@ test = CLOUDFLOW(
                  pad_border=(40, 40),
                  predict_style='interval',
                  track=True,
+                 max_intensity=2.5,
                  sampling_rates=(1., 1., 1., 1.),
                  rain_index_threshold=1.,
-                 run_test=True
+                 run_test=True,
+                 model_file='low_intensity2_max_int2.5_sr0.6_best.pkl'
                  )
 #test.gen_random_examples2(test_mode=True)
 
 def show_predictions(pred_stat):
+    a = np.array(pred_stat)
+    idx_arr = np.where(a[:,2] == 2)
+    plt.plot(a[idx_arr, 0], a[idx_arr, 1], 'y,')
     for pred in pred_stat:
         if pred[2] == 0:
             plt.plot(pred[0], pred[1], 'g.')

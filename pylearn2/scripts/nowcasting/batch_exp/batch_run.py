@@ -112,6 +112,21 @@ hyperparams_list = [
                     OrderedDict([('th', 3), ('sr', 1.)]),
                     OrderedDict([('th', 4), ('sr', 1.)]),
                     ]
+base = 'low_intensity'
+hyperparams_list = [
+#                    OrderedDict([('ceiling', 4), ('sr', .6)]),
+#                    OrderedDict([('ceiling', 3), ('sr', .6)]),
+                    OrderedDict([('ceiling', 15), ('mean_ceiling', 3.), ('sr', .6)]),
+                    ]
+
+base = 'low_intensity2'
+hyperparams_list = [
+                    OrderedDict([('max_int', 2.5), ('sr', .6)]),
+                    OrderedDict([('max_int', 3.0), ('sr', .6)]),
+                    OrderedDict([('max_int', 3.5), ('sr', .6)]),
+                    OrderedDict([('max_int', 4.0), ('sr', .6)]),
+                    OrderedDict([('max_int', 2.0), ('sr', .6)]),
+                    ]
 
 yaml_template = open(base + '_template.yaml', 'r').read()
 results_path = base + '_results.txt'
