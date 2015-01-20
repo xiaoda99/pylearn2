@@ -196,9 +196,10 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         self.show_right_track = None
         self.showdiv = 2
         self.model_base = '/home/xd/projects/pylearn2/pylearn2/scripts/nowcasting/batch_exp/'
-        self.model_path = self.model_base + 'threshold_3_0.6_best.pkl'
+#        self.model_path = self.model_base + 'threshold_3_0.6_best.pkl'
 #        self.model_path_track = self.model_base + 'threshold_3_0.6_best.pkl'
         self.model_path_track = self.model_base + self.model_file
+        self.model_path = self.model_path_track
         self.cnts_total = np.zeros(4, dtype='int32')
         self.cnts_sampled = np.zeros(4, dtype='int32')
         self.min_flow_norm = 4.
