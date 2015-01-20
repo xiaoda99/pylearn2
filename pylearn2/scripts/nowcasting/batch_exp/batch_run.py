@@ -121,11 +121,34 @@ hyperparams_list = [
 
 base = 'low_intensity2'
 hyperparams_list = [
-                    OrderedDict([('max_int', 2.5), ('sr', .6)]),
-                    OrderedDict([('max_int', 3.0), ('sr', .6)]),
-                    OrderedDict([('max_int', 3.5), ('sr', .6)]),
-                    OrderedDict([('max_int', 4.0), ('sr', .6)]),
-                    OrderedDict([('max_int', 2.0), ('sr', .6)]),
+#                    OrderedDict([('max_int', 2.5), ('sr', .6)]),
+#                    OrderedDict([('max_int', 3.0), ('sr', .6)]),
+#                    OrderedDict([('max_int', 3.5), ('sr', .6)]),
+#                    OrderedDict([('max_int', 4.0), ('sr', .6)]),
+#                    OrderedDict([('max_int', 2.0), ('sr', .6)]),
+                    OrderedDict([('max_int', 5.0), ('sr', .6)]),
+                    OrderedDict([('max_int', 6.0), ('sr', .6)]),
+                    ]
+
+base = 'int_experts'
+hyperparams_list = [
+    OrderedDict([('trainlow', 0.), ('trainhigh', 15.), ('testlow', 0.), ('testhigh', 3.), ('max_int', 2.0), ('sr', .6)]),
+    OrderedDict([('trainlow', 0.), ('trainhigh', 15.), ('testlow', 0.), ('testhigh', 3.), ('max_int', 2.5), ('sr', .6)]),
+    OrderedDict([('trainlow', 0.), ('trainhigh', 2.5), ('testlow', 0.), ('testhigh', 3.), ('max_int', 15.), ('sr', .6)]),
+    OrderedDict([('trainlow', 0.), ('trainhigh', 3.0), ('testlow', 0.), ('testhigh', 3.), ('max_int', 15.), ('sr', .6)]),
+    OrderedDict([('trainlow', 0.), ('trainhigh', 3.5), ('testlow', 0.), ('testhigh', 3.), ('max_int', 15.), ('sr', .6)]),
+    OrderedDict([('trainlow', 0.), ('trainhigh', 2.5), ('testlow', 0.), ('testhigh', 3.), ('max_int', 2.5), ('sr', .6)]),
+    OrderedDict([('trainlow', 0.), ('trainhigh', 3.0), ('testlow', 0.), ('testhigh', 3.), ('max_int', 2.5), ('sr', .6)]),
+    OrderedDict([('trainlow', 0.), ('trainhigh', 3.5), ('testlow', 0.), ('testhigh', 3.), ('max_int', 2.5), ('sr', .6)]),
+    
+    OrderedDict([('trainlow', 0.0), ('trainhigh', 15.), ('testlow', 3.), ('testhigh', 15.), ('max_int', 6.), ('sr', .6)]),
+    OrderedDict([('trainlow', 0.0), ('trainhigh', 15.), ('testlow', 3.), ('testhigh', 15.), ('max_int', 7.), ('sr', .6)]),
+    OrderedDict([('trainlow', 3.0), ('trainhigh', 15.), ('testlow', 3.), ('testhigh', 15.), ('max_int', 15.), ('sr', .6)]),
+    OrderedDict([('trainlow', 2.5), ('trainhigh', 15.), ('testlow', 3.), ('testhigh', 15.), ('max_int', 15.), ('sr', .6)]),
+    OrderedDict([('trainlow', 2.0), ('trainhigh', 15.), ('testlow', 3.), ('testhigh', 15.), ('max_int', 15.), ('sr', .6)]),
+    OrderedDict([('trainlow', 3.0), ('trainhigh', 15.), ('testlow', 3.), ('testhigh', 15.), ('max_int', 7.), ('sr', .6)]),
+    OrderedDict([('trainlow', 2.5), ('trainhigh', 15.), ('testlow', 3.), ('testhigh', 15.), ('max_int', 7.), ('sr', .6)]),
+    OrderedDict([('trainlow', 2.0), ('trainhigh', 15.), ('testlow', 3.), ('testhigh', 15.), ('max_int', 7.), ('sr', .6)]),
                     ]
 
 yaml_template = open(base + '_template.yaml', 'r').read()

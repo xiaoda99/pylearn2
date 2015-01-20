@@ -61,15 +61,20 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                  track=True,
                  frame_diff=False,
                  intensity_normalization=False,
-                 intensity_range = (0, 15),
                  mean_intensity_range = (0., 15.),
                  max_intensity = 15.,
+                 train_int_range = (0., 15.),
+                 test_int_range = (0., 15.),
                  sampling_rates=(1., 1., 1., 1.),
                  rain_index_threshold=1.,
                  run_test=False,
                  model_file='low_intensity_ceiling4_sr0.6_best.pkl'
                  ):
-
+        if which_set != 'test':
+            assert test_int_range == (0., 15.)
+        if which_set == 'test':
+            assert train_int_range == (0., 15.)
+            
         assert predict_style in ['interval', 'point']
         self.__dict__.update(locals())
         del self.self
@@ -119,9 +124,6 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     print 'Cached. Loading data from ramdisk...'
                     matrix = np.load(npy_file)[:, self.image_border[0] : -self.image_border[0], 
                                                self.image_border[1] : -self.image_border[1]]
-#                    matrix = matrix * (matrix >= self.intensity_range[0])
-#                    matrix = matrix * (matrix <= self.intensity_range[1]) + \
-#                            self.intensity_range[1] * (matrix > self.intensity_range[1])
                     flow = np.load(npy_flow_file)[:, self.image_border[0]/2 : -self.image_border[0]/2, 
                                                self.image_border[1]/2 : -self.image_border[1]/2]
                     #pad_width = ((0,0), (pad_border[0], pad_border[0]), (pad_border[1], pad_border[1]))
@@ -401,7 +403,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                         continue
                     track_frames = track_frames_ext[:self.train_frame_size[0]]
                     target_track_frames = track_frames_ext[-self.predict_frame_size[0]:]
-                    mean_intensity = self.compute_mean_intensity(track_frames)
+                    test_int_mean = self.compute_mean_intensity(track_frames)
                     
                     train_frames_ext = self.get_frames_ext(month, i, train_frame_center, self.train_frame_radius)
                     train_frames = train_frames_ext[:self.train_frame_size[0]]
@@ -409,6 +411,8 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
 
                     rain = target_frames[:, self.train_frame_radius[0], self.train_frame_radius[1]].max() >= self.threshold
                     if not self.is_sampled(track_frames, target_frames, self.train_frame_radius, rain):
+                        continue
+                    if test_int_mean < self.test_int_range[0] or test_int_mean > self.test_int_range[1]:
                         continue
                     
 #                    if not self.sampled(last_rain, rain):
@@ -429,15 +433,20 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
 #                            ds = self.diff(ds)
 #                        x = ds.round().astype('uint8').flatten()
                         x = ds.flatten()
+                        
+                        train_int_mean = self.compute_mean_intensity(x)
+                        if train_int_mean < self.train_int_range[0] or train_int_mean > self.train_int_range[1]:
+                            continue
                         x = x * (x <= self.max_intensity) + \
                                 self.max_intensity * (x > self.max_intensity)
+                    
                         CLOUDFLOW.X_large[self.which_set][self.example_cnt] = x
                         CLOUDFLOW.y_large[self.which_set][self.example_cnt, 0] = rain
                         self.example_cnt += 1
                     else:
                         assert self.which_set == 'test'
                         flow_norm = np.sum(flow_mean**2)**(1./2)
-                        group_id = self.group(mean_intensity, flow_norm)
+                        group_id = self.group(test_int_mean, flow_norm)
                         models_in_group = groups[group_id]
                         
                         rain_prob_track = self.predict_rain_prob(track_frames, pred_func_track)

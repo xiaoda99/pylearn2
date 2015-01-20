@@ -25,11 +25,11 @@ test = CLOUDFLOW(
                  pad_border=(40, 40),
                  predict_style='interval',
                  track=True,
-                 max_intensity=2.5,
+                 max_intensity=5.0,
                  sampling_rates=(1., 1., 1., 1.),
                  rain_index_threshold=1.,
                  run_test=True,
-                 model_file='low_intensity2_max_int2.5_sr0.6_best.pkl'
+                 model_file='low_intensity2_max_int5.0_sr0.6_best.pkl'
                  )
 #test.gen_random_examples2(test_mode=True)
 
