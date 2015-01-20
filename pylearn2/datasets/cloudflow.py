@@ -71,9 +71,9 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                  model_file='low_intensity_ceiling4_sr0.6_best.pkl'
                  ):
         if which_set != 'test':
-            assert test_int_range == (0., 15.)
+            assert test_int_range == [0., 15.]
         if which_set == 'test':
-            assert train_int_range == (0., 15.)
+            assert train_int_range == [0., 15.]
             
         assert predict_style in ['interval', 'point']
         self.__dict__.update(locals())

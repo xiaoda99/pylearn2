@@ -90,7 +90,7 @@
                  pad_border: [40, 40],
                  predict_style: 'interval',
                  track: 1,
-                 train_int_range: [1., 15.],
+                 train_int_range: [0., 15.],
                  test_int_range: [%(testlow)f, %(testhigh)f],
                  max_intensity: %(max_int)f,
                  rain_index_threshold: 1.,
