@@ -61,19 +61,26 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                  track=True,
                  frame_diff=False,
                  intensity_normalization=False,
-                 mean_intensity_range = (0., 15.),
                  max_intensity = 15.,
-                 train_int_range = (0., 15.),
-                 test_int_range = (0., 15.),
+                 train_int_range = [0., 15.],
+                 test_int_range = [0., 15.],
                  sampling_rates=(1., 1., 1., 1.),
                  rain_index_threshold=1.,
+                 adaptive_sampling=True,
+                 sample_prob=10.,
                  run_test=False,
                  model_file='low_intensity_ceiling4_sr0.6_best.pkl'
                  ):
-        if which_set != 'test':
-            assert test_int_range == [0., 15.]
-        if which_set == 'test':
-            assert train_int_range == [0., 15.]
+        if test_int_range is None:
+            test_int_range = [0., 15.] 
+        else:
+            if which_set != 'test':
+                assert test_int_range == [0., 15.]
+        if train_int_range is None:
+            train_int_range = [0., 15.] 
+        else:
+            if which_set == 'test':
+                assert train_int_range == [0., 15.]
             
         assert predict_style in ['interval', 'point']
         self.__dict__.update(locals())
@@ -207,7 +214,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         self.min_flow_norm = 4.
         self.max_flow_norm = 6.
         
-    def sampled(self, last_rain, rain):
+    def sampled_old(self, last_rain, rain):
         if last_rain == 0 and rain == 0:
             type = 0
         elif last_rain == 0 and rain == 1:
@@ -222,35 +229,6 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         
         self.cnts_total[type] += 1
         self.cnts_sampled[type] += ret
-        return ret
-        
-    def sampled_old(self, last_rain, last_rain_track, rain):
-        if last_rain == 0 and rain == 0:
-            type = 0
-        elif last_rain == 0 and rain == 1:
-            type = 1
-        elif last_rain == 1 and rain == 0:
-            type = 2
-        else:
-            type = 3
-        
-        threshold = self.sampling_rates[type]
-        ret = np.random.uniform(0., 1.) < threshold
-        
-        self.cnts_total[type] += 1
-        self.cnts_sampled[type] += ret
-        
-        if last_rain_track == 0 and rain == 0:
-            type_track = 0
-        elif last_rain_track == 0 and rain == 1:
-            type_track = 1
-        elif last_rain_track == 1 and rain == 0:
-            type_track = 2
-        else:
-            type_track = 3
-        self.cnts_total_track[type_track] += 1
-        self.cnts_sampled_track[type_track] += ret
-            
         return ret
     
     def compute_rain_index(self, frame, center):
@@ -283,7 +261,6 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     return nrain * 1. / central_area.size
             return 0.
             
-    
     def is_sampled(self, train_frames, target_frames, center, rain):
         train_frame = train_frames[-1]
         target_frame = target_frames.max(axis=0)
@@ -306,6 +283,22 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         self.cnts_total[type] += 1
         self.cnts_sampled[type] += sampled
         return sampled
+    
+    def sampled(self, train_frames, target_frames, center, rain, mean_intensity):
+        train_frame = train_frames[-1]
+        target_frame = target_frames.max(axis=0)
+        if max(train_frame[center[0], center[1]], target_frame[center[0], center[1]]) == 1:
+            return True
+        if train_frame.sum() + target_frame.sum() == 0:
+            return False
+        
+#        mean_intensity = self.compute_mean_intensity(train_frames)
+        if self.which_set == 'test':
+            return True
+        elif self.adaptive_sampling:
+            return np.random.uniform(0., 1.) < mean_intensity * self.sample_prob / 3.
+        else:
+            return np.random.uniform(0., 1.) < self.sample_prob
         
     def compare_models(self, rain, pred0, pred1, model_pair):
         if not rain and not pred0 and not pred1:
@@ -403,17 +396,19 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                         continue
                     track_frames = track_frames_ext[:self.train_frame_size[0]]
                     target_track_frames = track_frames_ext[-self.predict_frame_size[0]:]
-                    test_int_mean = self.compute_mean_intensity(track_frames)
+#                    int_mean = self.compute_mean_intensity(track_frames)
                     
                     train_frames_ext = self.get_frames_ext(month, i, train_frame_center, self.train_frame_radius)
                     train_frames = train_frames_ext[:self.train_frame_size[0]]
                     target_frames = train_frames_ext[-self.predict_frame_size[0]:]
 
                     rain = target_frames[:, self.train_frame_radius[0], self.train_frame_radius[1]].max() >= self.threshold
-                    if not self.is_sampled(track_frames, target_frames, self.train_frame_radius, rain):
+                    mean_intensity = self.compute_mean_intensity(train_frames)
+                    if not self.sampled(track_frames, target_frames, self.train_frame_radius, rain, mean_intensity):
                         continue
-                    if test_int_mean < self.test_int_range[0] or test_int_mean > self.test_int_range[1]:
-                        continue
+#                    if self.which_set == 'test' and (int_mean < self.test_int_range[0] or 
+#                                                     int_mean > self.test_int_range[1]):
+#                        continue
                     
 #                    if not self.sampled(last_rain, rain):
 #                        continue
@@ -434,9 +429,9 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
 #                        x = ds.round().astype('uint8').flatten()
                         x = ds.flatten()
                         
-                        train_int_mean = self.compute_mean_intensity(x)
-                        if train_int_mean < self.train_int_range[0] or train_int_mean > self.train_int_range[1]:
-                            continue
+#                        train_int_mean = self.compute_mean_intensity(x)
+#                        if train_int_mean < self.train_int_range[0] or train_int_mean > self.train_int_range[1]:
+#                            continue
                         x = x * (x <= self.max_intensity) + \
                                 self.max_intensity * (x > self.max_intensity)
                     
@@ -446,7 +441,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     else:
                         assert self.which_set == 'test'
                         flow_norm = np.sum(flow_mean**2)**(1./2)
-                        group_id = self.group(test_int_mean, flow_norm)
+                        group_id = self.group(mean_intensity, flow_norm)
                         models_in_group = groups[group_id]
                         
                         rain_prob_track = self.predict_rain_prob(track_frames, pred_func_track)
@@ -676,7 +671,8 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
     def predict_rain_prob(self, frames, pred_func):    
         ds = cv2.resize(frames.transpose((1,2,0)), 
                         (0,0), fx=1./self.postdiv, fy=1./self.postdiv).transpose((2,0,1))
-        x = ds.round().astype('uint8').flatten()
+#        x = ds.round().astype('uint8').flatten()
+        x = ds.flatten()
         rain_prob = pred_func(x.reshape(1, x.shape[0]))[0][0]
         return rain_prob
                                      

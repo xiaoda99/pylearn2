@@ -4,9 +4,8 @@ import cv2
 import pylab as plt
 import numpy as np
 
-#train:76
-#valid:31
-#test:46
+import sys
+model_file = sys.argv[1]
 
 test = CLOUDFLOW(  
                  which_set='test',
@@ -19,17 +18,17 @@ test = CLOUDFLOW(
                  predict_frame_size = (2,1,1),
                  predict_interval = 2,
                  tstride = 1,
-                 examples_per_image = 50,
+                 examples_per_image = 100,
                  video_shape = (7200, 477, 477),
                  image_border=(88, 88),
                  pad_border=(40, 40),
                  predict_style='interval',
                  track=True,
-                 max_intensity=5.0,
+                 max_intensity=15.,
                  sampling_rates=(1., 1., 1., 1.),
                  rain_index_threshold=1.,
                  run_test=True,
-                 model_file='low_intensity2_max_int5.0_sr0.6_best.pkl'
+                 model_file=model_file
                  )
 #test.gen_random_examples2(test_mode=True)
 
