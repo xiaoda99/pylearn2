@@ -160,11 +160,11 @@ hyperparams_list = [
 
 base = 'sample2'
 hyperparams_list = [
-                    OrderedDict([('adaptive', 1), ('prob', .5)]),
-                    OrderedDict([('adaptive', 1), ('prob', .45)]),
-                    OrderedDict([('adaptive', 1), ('prob', .54)]),
-                    OrderedDict([('adaptive', 1), ('prob', .4)]),
+                    OrderedDict([('adaptive', 1), ('prob', 1.)]),
+                    OrderedDict([('adaptive', 1), ('prob', .8)]),
                     OrderedDict([('adaptive', 1), ('prob', .6)]),
+                    OrderedDict([('adaptive', 1), ('prob', .4)]),
+                    OrderedDict([('adaptive', 1), ('prob', .2)]),
                     ]
 
 yaml_template = open(base + '_template.yaml', 'r').read()

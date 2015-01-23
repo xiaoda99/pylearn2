@@ -284,12 +284,13 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         self.cnts_sampled[type] += sampled
         return sampled
     
-    def sampled(self, train_frames, target_frames, center, rain, mean_intensity):
+    def sampled(self, train_frames, rain, rain_prob_flow, mean_intensity):
         train_frame = train_frames[-1]
-        target_frame = target_frames.max(axis=0)
-        if max(train_frame[center[0], center[1]], target_frame[center[0], center[1]]) == 1:
+#        target_frame = target_frames.max(axis=0)
+#        if max(train_frame[center[0], center[1]], target_frame[center[0], center[1]]) == 1:
+        if rain or rain_prob_flow:
             return True
-        if train_frame.sum() + target_frame.sum() == 0:
+        if train_frame.sum() == 0:
             return False
         
 #        mean_intensity = self.compute_mean_intensity(train_frames)
@@ -403,8 +404,9 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     target_frames = train_frames_ext[-self.predict_frame_size[0]:]
 
                     rain = target_frames[:, self.train_frame_radius[0], self.train_frame_radius[1]].max() >= self.threshold
+                    rain_prob_flow, traceback_vals = self.pred_func_flow(month, i, train_frame_center, flow_mean)
                     mean_intensity = self.compute_mean_intensity(train_frames)
-                    if not self.sampled(track_frames, target_frames, self.train_frame_radius, rain, mean_intensity):
+                    if not self.sampled(track_frames, rain, rain_prob_flow, mean_intensity):
                         continue
 #                    if self.which_set == 'test' and (int_mean < self.test_int_range[0] or 
 #                                                     int_mean > self.test_int_range[1]):
