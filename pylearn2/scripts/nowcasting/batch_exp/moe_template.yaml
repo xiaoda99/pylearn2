@@ -19,7 +19,7 @@
                  intensity_range: [%(trainlow)f, %(trainhigh)f],
                  max_intensity: %(maxint)f,
                  adaptive_sampling: 0,
-                 sample_prob: 1.,
+                 sample_prob: .6,
     },
     model: !obj:pylearn2.models.mlp.MLP {
         batch_size: 512,
@@ -69,7 +69,7 @@
                  intensity_range: [%(trainlow)f, %(trainhigh)f],
                  max_intensity: %(maxint)f,
                  adaptive_sampling: 0,
-                 sample_prob: 1.,
+                 sample_prob: .6,
                  },
                 'test' : &test !obj:pylearn2.datasets.cloudflow.CLOUDFLOW {
                  which_set: 'test',
