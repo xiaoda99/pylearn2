@@ -62,9 +62,9 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                  frame_diff=False,
                  intensity_normalization=False,
                  max_intensity = 15.,
-                 train_max_intensity = 15.,
                  train_int_range = [0., 15.],
                  test_int_range = [0., 15.],
+                 intensity_range = [0., 15.],
                  sampling_rates=(1., 1., 1., 1.),
                  rain_index_threshold=1.,
                  adaptive_sampling=False,
@@ -72,16 +72,16 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                  run_test=False,
                  model_file='low_intensity_ceiling4_sr0.6_best.pkl'
                  ):
-        if test_int_range is None:
-            test_int_range = [0., 15.] 
-        else:
-            if which_set != 'test':
-                assert test_int_range == [0., 15.]
-        if train_int_range is None:
-            train_int_range = [0., 15.] 
-        else:
-            if which_set == 'test':
-                assert train_int_range == [0., 15.]
+#        if test_int_range is None:
+#            test_int_range = [0., 15.] 
+#        else:
+#            if which_set != 'test':
+#                assert test_int_range == [0., 15.]
+#        if train_int_range is None:
+#            train_int_range = [0., 15.] 
+#        else:
+#            if which_set == 'test':
+#                assert train_int_range == [0., 15.]
             
         assert predict_style in ['interval', 'point']
         self.__dict__.update(locals())
@@ -409,11 +409,13 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     mean_intensity = self.compute_mean_intensity(train_frames)
                     if not self.sampled(track_frames, rain, rain_prob_flow, mean_intensity):
                         continue
-                    if self.which_set == 'test' and (mean_intensity < self.test_int_range[0] or 
-                                                     mean_intensity > self.test_int_range[1]):
-                        continue
-                    if self.which_set != 'test' and (mean_intensity < self.train_int_range[0] or 
-                                                     mean_intensity > self.train_int_range[1]):
+#                    if self.which_set == 'test' and (mean_intensity < self.test_int_range[0] or 
+#                                                     mean_intensity > self.test_int_range[1]):
+#                        continue
+#                    if self.which_set != 'test' and (mean_intensity < self.train_int_range[0] or 
+#                                                     mean_intensity > self.train_int_range[1]):
+#                        continue
+                    if mean_intensity < self.intensity_range[0] or mean_intensity > self.intensity_range[1]:
                         continue
 #                    if not self.sampled(last_rain, rain):
 #                        continue
@@ -437,9 +439,8 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
 #                        train_int_mean = self.compute_mean_intensity(x)
 #                        if train_int_mean < self.train_int_range[0] or train_int_mean > self.train_int_range[1]:
 #                            continue
-                        if self.which_set != 'test':
-                            x = x * (x <= self.train_max_intensity) + \
-                                    self.train_max_intensity * (x > self.train_max_intensity)
+                        x = x * (x <= self.max_intensity) + \
+                                self.max_intensity * (x > self.max_intensity)
                     
                         CLOUDFLOW.X_large[self.which_set][self.example_cnt] = x
                         CLOUDFLOW.y_large[self.which_set][self.example_cnt, 0] = rain
