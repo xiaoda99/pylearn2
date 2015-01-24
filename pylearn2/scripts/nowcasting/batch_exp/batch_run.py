@@ -170,25 +170,28 @@ hyperparams_list = [
 
 base = 'moe'
 hyperparams_list = [
-    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 15.)]),
-    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 3.)]),
-    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 4.)]),
-    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 5.)]),
-    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 15.)]),
-    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 3.)]),
-    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 4.)]),
-    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 5.)]),
+    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 15.)])),
+    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 3.)])),
+    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 4.)])),
+    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 5.)])),
+    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 15.)])),
+    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 3.)])),
+    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 4.)])),
+    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 5.)])),
     ]
-                    
+
+import sys
+device = sys.argv[1]
 yaml_template = open(base + '_template.yaml', 'r').read()
-results_path = base + '_results.txt'
-for hyperparams in hyperparams_list:
-    model_base = get_model_base(base, hyperparams)
-    hyperparams.update({'save_base' : model_base})
-    yaml = yaml_template % (hyperparams)
-    train = yaml_parse.load(yaml)
-    train.main_loop()
+results_path = base + '_' + device + '_results.txt'
+for (dev, hyperparams) in hyperparams_list:
+    if dev == device:
+        model_base = get_model_base(base, hyperparams)
+        hyperparams.update({'save_base' : model_base})
+        yaml = yaml_template % (hyperparams)
+        train = yaml_parse.load(yaml)
+        train.main_loop()
     
-    model_path = model_base + '_best.pkl'
-    
-    print_results(model_path, results_path)
+        model_path = model_base + '_best.pkl'
+        
+        print_results(model_path, results_path)
