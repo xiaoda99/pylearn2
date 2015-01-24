@@ -62,12 +62,13 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                  frame_diff=False,
                  intensity_normalization=False,
                  max_intensity = 15.,
+                 train_max_intensity = 15.,
                  train_int_range = [0., 15.],
                  test_int_range = [0., 15.],
                  sampling_rates=(1., 1., 1., 1.),
                  rain_index_threshold=1.,
-                 adaptive_sampling=True,
-                 sample_prob=10.,
+                 adaptive_sampling=False,
+                 sample_prob=1.,
                  run_test=False,
                  model_file='low_intensity_ceiling4_sr0.6_best.pkl'
                  ):
@@ -408,10 +409,12 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
                     mean_intensity = self.compute_mean_intensity(train_frames)
                     if not self.sampled(track_frames, rain, rain_prob_flow, mean_intensity):
                         continue
-#                    if self.which_set == 'test' and (int_mean < self.test_int_range[0] or 
-#                                                     int_mean > self.test_int_range[1]):
-#                        continue
-                    
+                    if self.which_set == 'test' and (mean_intensity < self.test_int_range[0] or 
+                                                     mean_intensity > self.test_int_range[1]):
+                        continue
+                    if self.which_set != 'test' and (mean_intensity < self.train_int_range[0] or 
+                                                     mean_intensity > self.train_int_range[1]):
+                        continue
 #                    if not self.sampled(last_rain, rain):
 #                        continue
 #                    if self.intensity_normalization:
@@ -434,8 +437,9 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
 #                        train_int_mean = self.compute_mean_intensity(x)
 #                        if train_int_mean < self.train_int_range[0] or train_int_mean > self.train_int_range[1]:
 #                            continue
-                        x = x * (x <= self.max_intensity) + \
-                                self.max_intensity * (x > self.max_intensity)
+                        if self.which_set != 'test':
+                            x = x * (x <= self.train_max_intensity) + \
+                                    self.train_max_intensity * (x > self.train_max_intensity)
                     
                         CLOUDFLOW.X_large[self.which_set][self.example_cnt] = x
                         CLOUDFLOW.y_large[self.which_set][self.example_cnt, 0] = rain

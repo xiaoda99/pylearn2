@@ -167,6 +167,19 @@ hyperparams_list = [
                     OrderedDict([('adaptive', 1), ('prob', .2)]),
                     ]
 
+
+base = 'moe'
+hyperparams_list = [
+    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 15.)]),
+    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 3.)]),
+    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 4.)]),
+    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 5.)]),
+    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 15.)]),
+    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 3.)]),
+    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 4.)]),
+    OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 5.)]),
+    ]
+                    
 yaml_template = open(base + '_template.yaml', 'r').read()
 results_path = base + '_results.txt'
 for hyperparams in hyperparams_list:
