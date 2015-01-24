@@ -1,7 +1,7 @@
 from pylearn2.datasets.cloudflow import CLOUDFLOW
 import math
 import cv2
-import pylab as plt
+#import pylab as plt
 import numpy as np
 
 import sys
