@@ -189,6 +189,7 @@ for (dev, hyperparams) in hyperparams_list:
         model_base = get_model_base(base, hyperparams)
         hyperparams.update({'save_base' : model_base})
         yaml = yaml_template % (hyperparams)
+#        print yaml
         train = yaml_parse.load(yaml)
         train.main_loop()
     

@@ -67,9 +67,9 @@
                  pad_border: [40, 40],
                  predict_style: 'interval',
                  track: 1,
-                 test_int_range: [%(testlow)f., %(testhigh)f.],
+                 test_int_range: [%(testlow)f, %(testhigh)f],
                  train_int_range: [%(trainlow)f, %(trainhigh)f],
-                 train_max_intensity: %(maxint)f.
+                 train_max_intensity: %(maxint)f,
                  adaptive_sampling: 0,
                  sample_prob: 1.,
                  },
@@ -90,9 +90,9 @@
                  pad_border: [40, 40],
                  predict_style: 'interval',
                  track: 1,
-                 test_int_range: [%(testlow)f., %(testhigh)f.],
+                 test_int_range: [%(testlow)f, %(testhigh)f],
                  train_int_range: [%(trainlow)f, %(trainhigh)f],
-                 train_max_intensity: %(maxint)f.
+                 train_max_intensity: %(maxint)f,
                  adaptive_sampling: 0,
                  sample_prob: 1.,
                  },
