@@ -140,7 +140,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
         ramdisk_root = '/home/xd/ramdisk_backup/'
         X_path = ramdisk_root + self.filename('X')
         y_path = ramdisk_root + self.filename('y')
-        
+        print 'X_path =', X_path 
         if os.path.isfile(X_path) and not self.show_mode:
             print '\n', which_set, 'set already built. Loading from file...'
             X = np.load(X_path)
