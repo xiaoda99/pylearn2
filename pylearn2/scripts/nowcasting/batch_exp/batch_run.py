@@ -2,11 +2,13 @@ from pylearn2.config import yaml_parse
 from pylearn2.utils import serial
 from ordereddict import OrderedDict
 
-def get_model_base(base, hyperparams):
-    model_base = base
-    for key in hyperparams:
-        model_base += ('_' + key + str(hyperparams[key]))
-    return model_base
+from pylearn2.datasets.cloudflow import CLOUDFLOW, get_model_base
+
+#def get_model_base(base, hyperparams):
+#    model_base = base
+#    for key in hyperparams:
+#        model_base += ('_' + key + str(hyperparams[key]))
+#    return model_base
 
 def print_results(model_path, results_path):
     f = open(results_path, 'a+')
@@ -170,29 +172,111 @@ hyperparams_list = [
 
 base = 'moe'
 hyperparams_list = [
-    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 15.)])),
-    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 3.)])),
-    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 4.)])),
-    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 5.)])),
-    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 15.)])),
-    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 3.)])),
-    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 4.)])),
-    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 5.)])),
+    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 2.5), ('trainlow', 0.), ('trainhigh', 2.5), ('maxint', 15.)])),
+#    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 2.5), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 15.)])),
+#    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 2.5), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 2.5)])),
+#    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 2.5), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 3.)])),
+#    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 2.5), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 4.)])),
+#    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 15.)])),
+#    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 3.)])),
+#    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 4.)])),
+#    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 15.), ('maxint', 5.)])),
+#    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 15.)])),
+#    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 3.)])),
+#    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 4.)])),
+#    ('gpu1', OrderedDict([('testlow', 0.), ('testhigh', 3.), ('trainlow', 0.), ('trainhigh', 3.), ('maxint', 5.)])),
     ]
 
-import sys
-device = sys.argv[1]
-yaml_template = open(base + '_template.yaml', 'r').read()
-results_path = base + '_' + device + '_results.txt'
-for (dev, hyperparams) in hyperparams_list:
-    if dev == device:
-        model_base = get_model_base(base, hyperparams)
-        hyperparams.update({'save_base' : model_base})
-        yaml = yaml_template % (hyperparams)
-#        print yaml
-        train = yaml_parse.load(yaml)
-        train.main_loop()
-    
-        model_path = model_base + '_best.pkl'
+base = 'moe_th3'
+hyperparams_list = [
+    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 2.), ('trainlow', 0.), ('trainhigh', 2.), ('adapt', 0), ('sp', 0.4)])),
+    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 2.), ('trainlow', 0.), ('trainhigh', 2.), ('adapt', 0), ('sp', 0.3)])),
+    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 2.), ('trainlow', 0.), ('trainhigh', 2.), ('adapt', 0), ('sp', 0.2)])),
+    ('gpu0', OrderedDict([('testlow', 0.), ('testhigh', 2.), ('trainlow', 0.), ('trainhigh', 2.), ('adapt', 0), ('sp', 0.1)])),
+    ]
+
+base = 'normalization'
+hyperparams_list = [
+#    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .5)])),
+#    ('gpu0', OrderedDict([('norm', 0), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .5)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('norm', 1), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('norm', 3), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('norm', 1), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 1)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 1)])),
+#    ('gpu0', OrderedDict([('norm', 3), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 1)])),
+#    ('gpu0', OrderedDict([('norm', 1), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 2)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 2)])),
+#    ('gpu0', OrderedDict([('norm', 3), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 2)])),
+    ('gpu0', OrderedDict([('norm', 0), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .6)])),
+#    ('gpu0', OrderedDict([('norm', 0), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .5)])),
+#    ('gpu0', OrderedDict([('norm', 0), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .4)])),
+#    ('gpu0', OrderedDict([('norm', 0), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .3)])),
+    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .6)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .5)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .4)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .3)])),
+    ('gpu0', OrderedDict([('norm', 3), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .6)])),
+#    ('gpu0', OrderedDict([('norm', 3), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .5)])),
+#    ('gpu0', OrderedDict([('norm', 3), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .4)])),
+#    ('gpu0', OrderedDict([('norm', 3), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .01), ('as', 0), ('sp', .3)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .001), ('as', 0), ('sp', .6)])),
+    ]
+
+base = 'harder'
+hyperparams_list = [
+#    ('gpu0', OrderedDict([('norm', 2)])),
+#    ('gpu0', OrderedDict([('norm', 0)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('lr', .1)])),
+    ('gpu0', OrderedDict([('norm', 0), ('lr', .1)])),
+]
+
+base = 'harder2'
+hyperparams_list = [
+    ('gpu0', OrderedDict([('norm', 0), ('lr', .1)])),
+    ('gpu0', OrderedDict([('norm', 2), ('lr', .1)])),
+]
+
+base = 'cnn'
+hyperparams_list = [
+#    ('gpu0', OrderedDict([('norm', 0), ('fltr', 0), ('h0ks', 7), ('h0pad', 3), ('h1ks', 3), ('h1pad', 1), 
+#                          ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('lr', .01), ('hl', 50)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('sp', .6), ('fltr', 0), ('h0ks', 7), ('h0pad', 3), ('h1ks', 3), ('h1pad', 1), 
+#                          ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('lr', .01), ('hl', 50)])),
+#    ('gpu0', OrderedDict([('norm', 0), ('sp', 1.), ('fltr', 1), ('h0ks', 7), ('h0pad', 3), ('h1ks', 3), ('h1pad', 1), 
+#                          ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('lr', .1), ('hl', 50)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('sp', 1.), ('fltr', 1), ('h0ks', 7), ('h0pad', 3), ('h1ks', 3), ('h1pad', 1), 
+#                          ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('lr', .1), ('hl', 50)])),
+    ('gpu0', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 5), ('h0pad', 2), ('h1ks', 3), ('h1pad', 1), 
+                          ('h2nu', 40), ('h2mcn', .35), ('ymcn', 1.2), ('wd', 0.), ('lr', .01), ('hl', 50)])),
+    ('gpu0', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 7), ('h0pad', 3), ('h1ks', 3), ('h1pad', 1), 
+                          ('h2nu', 40), ('h2mcn', .35), ('ymcn', 1.2), ('wd', 0.), ('lr', .01), ('hl', 50)])),
+    ('gpu0', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 9), ('h0pad', 4), ('h1ks', 3), ('h1pad', 1), 
+                          ('h2nu', 40), ('h2mcn', .35), ('ymcn', 1.2), ('wd', 0.), ('lr', .01), ('hl', 50)])),
+    ('gpu1', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 5), ('h0pad', 2), ('h1ks', 3), ('h1pad', 1), 
+                          ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01), ('hl', 50)])),
+    ('gpu1', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 7), ('h0pad', 3), ('h1ks', 3), ('h1pad', 1), 
+                          ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01), ('hl', 50)])),
+    ('gpu1', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 9), ('h0pad', 4), ('h1ks', 3), ('h1pad', 1), 
+                          ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01), ('hl', 50)])),          
+]
+
+if __name__ == "__main__":
+    import sys
+    device = sys.argv[1]
+    yaml_template = open(base + '_template.yaml', 'r').read()
+    results_path = base + '_' + device + '_results.txt'
+    for (dev, hyperparams) in hyperparams_list:
+        if dev == device:
+            model_base = get_model_base(base, hyperparams)
+            hyperparams.update({'save_base' : model_base})
+            yaml = yaml_template % (hyperparams)
+            with open(model_base + '.yaml', 'w') as f:
+                f.write(yaml)
+    #        print yaml
+            train = yaml_parse.load(yaml)
+            train.main_loop()
         
-        print_results(model_path, results_path)
+            model_path = model_base + '_best.pkl'
+            
+            print_results(model_path, results_path)

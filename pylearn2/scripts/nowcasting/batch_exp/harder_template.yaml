@@ -1,0 +1,141 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.cloudflow.CLOUDFLOW {
+                 which_set: 'train',
+                 num_examples: 700000,
+                 threshold: 2,
+                 prediv: 2,
+                 postdiv: 2,
+                 tdiv: 2,
+                 train_frame_size: [3,25,25],
+                 predict_frame_size: [2,1,1],
+                 predict_interval: 2,
+                 tstride: 1,
+                 examples_per_image: 100,
+                 video_shape: [7200, 477, 477],
+                 image_border: [88, 88],
+                 pad_border: [40, 40],
+                 predict_style: 'interval',
+                 track: 1,
+                 intensity_range: [0., 15.],
+                 normalization: %(norm)i,
+                 adaptive_sampling: 0,
+                 sample_prob: 1.,
+                 filter_model: 'norm2_200-100_mom0.9_lr0.01_best.pkl',
+                 filter_prob_range: [0.2, 0.8]
+    },
+    model: !obj:pylearn2.models.mlp.MLP {
+        batch_size: 512,
+        layers: [ !obj:pylearn2.models.mlp.RectifiedLinear {
+                    layer_name: 'h0',
+                    dim: 200,
+                    irange: .0002,
+                    max_col_norm: 9.,
+                },!obj:pylearn2.models.mlp.RectifiedLinear {
+                    layer_name: 'h1',
+                    dim: 200,
+                    irange: .0002,
+                    max_col_norm: 9.,
+                },!obj:pylearn2.models.mlp.Sigmoid {
+                    layer_name: 'y',
+                    irange: .005,
+                    dim: 1,
+                    max_col_norm: 100.,
+                    monitor_style: 'classification',
+                 }
+                ],
+        nvis: 432,
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: 512,
+        learning_rate: %(lr)f,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: .9
+        },
+        train_iteration_mode: 'even_shuffled_sequential',
+        monitor_iteration_mode: 'even_sequential',
+        monitoring_dataset:
+            {
+                'train' : *train,
+                'valid' : &valid !obj:pylearn2.datasets.cloudflow.CLOUDFLOW {
+                 which_set: 'valid',
+                 num_examples: 300000,
+                 threshold: 2,
+                 prediv: 2,
+                 postdiv: 2,
+                 tdiv: 2,
+                 train_frame_size: [3,25,25],
+                 predict_frame_size: [2,1,1],
+                 predict_interval: 2,
+                 tstride: 1,
+                 examples_per_image: 100,
+                 video_shape: [7200, 477, 477],
+                 image_border: [88, 88],
+                 pad_border: [40, 40],
+                 predict_style: 'interval',
+                 track: 1,
+                 intensity_range: [0., 15.],
+                 normalization: %(norm)i,
+                 adaptive_sampling: 0,
+                 sample_prob: 1.,
+                 filter_model: 'norm2_200-100_mom0.9_lr0.01_best.pkl',
+                 filter_prob_range: [0.2, 0.8]
+                 },
+                'test' : &test !obj:pylearn2.datasets.cloudflow.CLOUDFLOW {
+                 which_set: 'test',
+                 num_examples: 400000,
+                 threshold: 2,
+                 prediv: 2,
+                 postdiv: 2,
+                 tdiv: 2,
+                 train_frame_size: [3,25,25],
+                 predict_frame_size: [2,1,1],
+                 predict_interval: 2,
+                 tstride: 1,
+                 examples_per_image: 100,
+                 video_shape: [7200, 477, 477],
+                 image_border: [88, 88],
+                 pad_border: [40, 40],
+                 predict_style: 'interval',
+                 track: 1,
+                 intensity_range: [0., 15.],
+                 normalization: %(norm)i,
+                 adaptive_sampling: 0,
+                 sample_prob: 1.,
+                 filter_model: 'norm2_200-100_mom0.9_lr0.01_best.pkl',
+                 filter_prob_range: [0.2, 0.8]
+                 },
+            },
+        cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
+            !obj:pylearn2.costs.mlp.Default {
+            }, !obj:pylearn2.costs.mlp.WeightDecay {
+                coeffs: [.0002, .0002, .0002 ]
+            }          
+            ]
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.And {
+            criteria: [
+                !obj:pylearn2.termination_criteria.MonitorBased {
+                    channel_name: "valid_y_misclass",
+                    prop_decrease: 0.,
+                    N: 10
+                },
+                !obj:pylearn2.termination_criteria.EpochCounter {
+                    max_epochs: 100
+                }
+            ]
+        }
+},
+    extensions: [
+        !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+             channel_name: "valid_y_misclass",
+             save_path: "%(save_base)s_best.pkl"
+        },!obj:pylearn2.training_algorithms.sgd.OneOverEpoch {
+             start: 5,
+             half_life: 50,
+             min_lr: 0.00001
+        },
+    ],
+    save_path: "%(save_base)s.pkl",
+    save_freq: 1
+}
+

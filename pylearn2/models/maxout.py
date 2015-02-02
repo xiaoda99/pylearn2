@@ -429,12 +429,15 @@ class Maxout(Layer):
                                  "weight matrix W. This is a measure of the "
                                  "least influence any visible unit has.")
 
-        rval = OrderedDict([('row_norms_min', row_norms_min),
-                            ('row_norms_mean', row_norms.mean()),
-                            ('row_norms_max', row_norms.max()),
+        rval = OrderedDict([
+#                            ('row_norms_min', row_norms_min),
+#                            ('row_norms_mean', row_norms.mean()),
+#                            ('row_norms_max', row_norms.max()),
                             ('col_norms_min', col_norms.min()),
                             ('col_norms_mean', col_norms.mean()),
                             ('col_norms_max', col_norms.max()), ])
+        # added by XD
+        return rval
 
         if (state is not None) or (state_below is not None):
             if state is None:
