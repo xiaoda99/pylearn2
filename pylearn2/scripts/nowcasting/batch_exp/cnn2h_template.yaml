@@ -99,8 +99,8 @@
             },
         cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
             !obj:pylearn2.costs.mlp.dropout.Dropout {
-            input_include_probs: { 'h0' : 1., 'h1' : 1. },
-            input_scales: { 'h0' : 1., 'h1' : 1. }
+            input_include_probs: { 'h0' : 1., 'h1' : 1., 'y' : %(yiip)f},
+            input_scales: { 'h0' : 1., 'h1' : 1., 'y' : %(yis)f }
             },!obj:pylearn2.costs.mlp.WeightDecay {
                 coeffs: [%(wd)f, %(wd)f, %(wd)f ]
             }          

@@ -268,17 +268,26 @@ hyperparams_list = [
 
 base = 'cnn3h'
 hyperparams_list = [
-    ('gpu', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h2nu', 40), ('h2iip', 0.5), ('h2is', 2.),
-                         ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01)])),
+#    ('gpu', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h2nu', 40), ('h2iip', 0.5), ('h2is', 2.),
+#                         ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01)])),
+    ('gpu', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h2nu', 40), ('h2iip', 0.8), ('h2is', 1.25),
+                         ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01)])), # irange .005 -> .0002, failed to learn
 ]
 
 base = 'cnn2h'
 hyperparams_list = [
-    ('gpu0', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 2), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
-    ('gpu0', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 1), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
-    ('gpu1', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 3), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
-    ('gpu1', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 6), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 2), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 1), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+#    ('gpu1', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 3), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+#    ('gpu1', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 6), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 2), ('yiip', .8), ('yis', 1.25), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 2), ('yiip', 1.), ('yis', 1.), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 1), ('yiip', .8), ('yis', 1.25), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 3), ('yiip', .8), ('yis', 1.25), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 3), ('yiip', 1.), ('yis', 1.), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+#    ('gpu1', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 6), ('yiip', .8), ('yis', 1.25), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
 ]
+
 
 if __name__ == "__main__":
     import sys
