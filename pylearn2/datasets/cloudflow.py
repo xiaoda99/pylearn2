@@ -133,7 +133,7 @@ class CLOUDFLOW(dense_design_matrix.DenseDesignMatrix):
             print 'Preallocating X and y...'
 #            CLOUDFLOW.X_large[self.which_set] = np.zeros((num_examples, self.train_dim), dtype='uint8')
 #            CLOUDFLOW.y_large[self.which_set] = np.zeros((num_examples, self.predict_dim), dtype='uint8')
-            CLOUDFLOW.X_large[self.which_set] = np.zeros((num_examples, self.train_dim), dtype='float32')
+            CLOUDFLOW.X_large[self.which_set] = np.zeros((num_examples, self.train_dim), dtype='float64')
             CLOUDFLOW.y_large[self.which_set] = np.zeros((num_examples, self.predict_dim * 2), dtype='bool_')
             print 'Preallocating X and y done.' 
         

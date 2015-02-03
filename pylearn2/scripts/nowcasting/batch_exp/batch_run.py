@@ -223,13 +223,7 @@ hyperparams_list = [
 #    ('gpu0', OrderedDict([('norm', 2), ('minint', 0.), ('h0irange', .0002), ('h0mcn', .3), ('lr', .001), ('as', 0), ('sp', .6)])),
     ]
 
-base = 'harder'
-hyperparams_list = [
-#    ('gpu0', OrderedDict([('norm', 2)])),
-#    ('gpu0', OrderedDict([('norm', 0)])),
-#    ('gpu0', OrderedDict([('norm', 2), ('lr', .1)])),
-    ('gpu0', OrderedDict([('norm', 0), ('lr', .1)])),
-]
+
 
 base = 'harder2'
 hyperparams_list = [
@@ -259,6 +253,14 @@ hyperparams_list = [
                           ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01), ('hl', 50)])),
     ('gpu1', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 9), ('h0pad', 4), ('h1ks', 3), ('h1pad', 1), 
                           ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01), ('hl', 50)])),          
+]
+
+base = 'harder'
+hyperparams_list = [
+#    ('gpu0', OrderedDict([('norm', 2)])),
+#    ('gpu0', OrderedDict([('norm', 0)])),
+#    ('gpu0', OrderedDict([('norm', 2), ('lr', .1)])),
+    ('gpu', OrderedDict([('norm', 0), ('lr', .1)])),
 ]
 
 if __name__ == "__main__":

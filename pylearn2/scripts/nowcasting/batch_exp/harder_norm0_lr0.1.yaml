@@ -20,8 +20,7 @@
                  normalization: 0,
                  adaptive_sampling: 0,
                  sample_prob: 1.,
-                 filter_model: 'norm2_200-100_mom0.9_lr0.01_best.pkl',
-                 filter_prob_range: [0.2, 0.8]
+                 filter: 1,
     },
     model: !obj:pylearn2.models.mlp.MLP {
         batch_size: 512,
@@ -77,8 +76,7 @@
                  normalization: 0,
                  adaptive_sampling: 0,
                  sample_prob: 1.,
-                 filter_model: 'norm2_200-100_mom0.9_lr0.01_best.pkl',
-                 filter_prob_range: [0.2, 0.8]
+                 filter: 1,
                  },
                 'test' : &test !obj:pylearn2.datasets.cloudflow.CLOUDFLOW {
                  which_set: 'test',
@@ -101,8 +99,7 @@
                  normalization: 0,
                  adaptive_sampling: 0,
                  sample_prob: 1.,
-                 filter_model: 'norm2_200-100_mom0.9_lr0.01_best.pkl',
-                 filter_prob_range: [0.2, 0.8]
+                 filter: 1,
                  },
             },
         cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [

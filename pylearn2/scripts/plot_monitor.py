@@ -9,34 +9,23 @@ all of their monitoring channels and prompts the user to select
 a subset of them to be plotted.
 
 """
-from __future__ import print_function
-
 __authors__ = "Ian Goodfellow, Harm Aarts"
 __copyright__ = "Copyright 2010-2012, Universite de Montreal"
 __credits__ = ["Ian Goodfellow"]
 __license__ = "3-clause BSD"
-__maintainer__ = "LISA Lab"
-__email__ = "pylearn-dev@googlegroups"
+__maintainer__ = "Ian Goodfellow"
+__email__ = "goodfeli@iro"
 
-import gc
+from pylearn2.utils import serial
 import numpy as np
 import sys
-
-from theano.compat.six.moves import input, xrange
-from pylearn2.utils import serial
 from theano.printing import _TagGenerator
 from pylearn2.utils.string_utils import number_aware_alphabetical_key
-from pylearn2.utils import contains_nan, contains_inf
 import argparse
 
 channels = {}
 
 def unique_substring(s, other, min_size=1):
-    """
-    .. todo::
-
-        WRITEME
-    """
     size = min(len(s), min_size)
     while size <= len(s):
         for pos in xrange(0,len(s)-size+1):
@@ -53,20 +42,10 @@ def unique_substring(s, other, min_size=1):
     return s
 
 def unique_substrings(l, min_size=1):
-    """
-    .. todo::
-
-        WRITEME
-    """
-    return [unique_substring(s, [x for x in l if x is not s], min_size)
-            for s in l]
+    return [unique_substring(s, [x for x in l if x is not s], min_size) for s in l]
 
 def main():
-    """
-    .. todo::
 
-        WRITEME
-    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--out")
     parser.add_argument("model_paths", nargs='+')
@@ -78,21 +57,18 @@ def main():
       matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 
-    print('generating names...')
-    model_names = [model_path.replace('.pkl', '!') for model_path in
-            model_paths]
+    print 'generating names...'
+    model_names = [model_path.replace('.pkl', '!') for model_path in model_paths]
     model_names = unique_substrings(model_names, min_size=10)
-    model_names = [model_name.replace('!','') for model_name in
-            model_names]
-    print('...done')
+    model_names = [model_name.replace('!','') for model_name in model_names]
+    print '...done'
 
     for i, arg in enumerate(model_paths):
         try:
             model = serial.load(arg)
-        except Exception:
+        except:
             if arg.endswith('.yaml'):
-                print(sys.stderr, arg + " is a yaml config file," + 
-                      "you need to load a trained model.", file=sys.stderr)
+                print >> sys.stderr, arg+" is a yaml config file, you need to load a trained model."
                 quit(-1)
             raise
         this_model_channels = model.monitor.channels
@@ -104,52 +80,52 @@ def main():
 
         for channel in this_model_channels:
             channels[channel+postfix] = this_model_channels[channel]
-        del model
-        gc.collect()
 
 
     while True:
-        # Make a list of short codes for each channel so user can specify them
-        # easily
+        #XD
+        maxval = 0  
+        baseval = 0  
+        xlen = 0   
+        start = 10
+        stop = 0
+#Make a list of short codes for each channel so user can specify them easily
         tag_generator = _TagGenerator()
         codebook = {}
         sorted_codes = []
-        for channel_name in sorted(channels,
-                key = number_aware_alphabetical_key):
+        for channel_name in sorted(channels, key = number_aware_alphabetical_key):
             code = tag_generator.get_tag()
             codebook[code] = channel_name
             codebook['<'+channel_name+'>'] = channel_name
             sorted_codes.append(code)
 
-        x_axis = 'example'
-        print('set x_axis to example')
+        #x_axis = 'example'
+        x_axis = 'epoch'  #XD add
+        #print 'set x_axis to example'
 
         if len(channels.values()) == 0:
-            print("there are no channels to plot")
+            print "there are no channels to plot"
             break
 
-        # If there is more than one channel in the monitor ask which ones to
-        # plot
+        #if there is more than one channel in the monitor ask which ones to plot
         prompt = len(channels.values()) > 1
 
         if prompt:
 
-            # Display the codebook
+            #Display the codebook
             for code in sorted_codes:
-                print(code + '. ' + codebook[code])
+                print code + '. ' + codebook[code]
 
-            print()
+            print
 
-            print("Put e, b, s or h in the list somewhere to plot " + 
-                    "epochs, batches, seconds, or hours, respectively.")
-            response = input('Enter a list of channels to plot ' + \
-                    '(example: A, C,F-G, h, <test_err>) or q to quit' + \
-                    ' or o for options: ')
+            print "Put e, b, s or h in the list somewhere to plot epochs, batches, seconds, or hours, respectively."
+            print "Put max=xx or base=xx  in the list somewhere to set bounds or baseline for plotting."  #XD add
+            response = raw_input('Enter a list of channels to plot (example: A, C,F-G, h, <test_err>) or q to quit or o for options: ')
 
             if response == 'o':
-                print('1: smooth all channels')
-                print('any other response: do nothing, go back to plotting')
-                response = input('Enter your choice: ')
+                print '1: smooth all channels'
+                print 'any other response: do nothing, go back to plotting'
+                response = raw_input('Enter your choice: ')
                 if response == '1':
                     for channel in channels.values():
                         k = 5
@@ -176,6 +152,7 @@ def main():
             final_codes = set([])
 
             for code in codes:
+                """
                 if code == 'e':
                     x_axis = 'epoch'
                     continue
@@ -188,13 +165,27 @@ def main():
                 elif code.startswith('<'):
                     assert code.endswith('>')
                     final_codes.add(code)
+                """
+                #XD add
+                if code.startswith('max='):
+                    maxval = float(code.split('=')[-1])
+                    print 'maxval=', maxval  #XD debug
+                elif code.startswith('base='):
+                    baseval = float(code.split('=')[-1])
+                elif code.startswith('xlen='):
+                    xlen = float(code.split('=')[-1])
+                elif code.startswith('start='):
+                    start = float(code.split('=')[-1])
+                elif code.startswith('stop='):
+                    stop = float(code.split('=')[-1])
+
                 elif code.find('-') != -1:
                     #The current list element is a range of codes
 
                     rng = code.split('-')
 
                     if len(rng) != 2:
-                        print("Input not understood: "+code)
+                        print "Input not understood: "+code
                         quit(-1)
 
                     found = False
@@ -204,7 +195,7 @@ def main():
                             break
 
                     if not found:
-                        print("Invalid code: "+rng[0])
+                        print "Invalid code: "+rng[0]
                         quit(-1)
 
                     found = False
@@ -214,7 +205,7 @@ def main():
                             break
 
                     if not found:
-                        print("Invalid code: "+rng[1])
+                        print "Invalid code: "+rng[1]
                         quit(-1)
 
                     final_codes = final_codes.union(set(sorted_codes[i:j+1]))
@@ -225,27 +216,56 @@ def main():
         else:
             final_codes ,= set(codebook.keys())
 
+        plt.figure()
+        """XD
+        #Make 2 subplots so the legend gets a plot to itself and won't cover up the plot
+        ax = plt.subplot(1,2,1)
+
+        # Grow current axis' width by 30%
+        box = ax.get_position()
+
+        try:
+            x0 = box.x0
+            y0 = box.y0
+            width = box.width
+            height = box.height
+        except:
+            x0, width, y0, height = box
+
+
+        ax.set_position([x0, y0, width * 1.3, height])
+
+        ax.ticklabel_format( scilimits = (-3,3), axis = 'both')
+        """
+        plt.xlabel('# '+x_axis+'s')
+
+
         colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
         styles = list(colors)
         styles += [color+'--' for color in colors]
         styles += [color+':' for color in colors]
 
-        fig = plt.figure()
-        ax = plt.subplot(1,1,1)
-
-        # plot the requested channels
+        #plot the requested channels
         for idx, code in enumerate(sorted(final_codes)):
+            #code = code.upper()  #XD
 
-            channel_name= codebook[code]
+            #channel_name= codebook[code]
+            channel_name= codebook[code.upper()]   #XD
+            print 'channel_name =', channel_name  #XD
+
             channel = channels[channel_name]
 
             y = np.asarray(channel.val_record)
 
-            if contains_nan(y):
-                print(channel_name + ' contains NaNs')
+            if np.any(np.isnan(y)):
+                print channel_name + ' contains NaNs'
 
-            if contains_inf(y):
-                print(channel_name + 'contains infinite values')
+            if np.any(np.isinf(y)):
+                print channel_name + 'contains infinite values'
+
+            #XD add
+            if maxval != 0:
+                y = y * (y < maxval) + maxval * (y > maxval) 
 
             if x_axis == 'example':
                 x = np.asarray(channel.example_record)
@@ -264,21 +284,60 @@ def main():
             else:
                 assert False
 
+            #XD add
+            if xlen != 0:
+                y = y[:xlen]
+                x = x[:xlen]
+            if start != 0 and stop !=0:
+                y = y[start:stop]
+                x = x[start:stop]
+            elif start != 0:
+                y = y[start:]
+                x = x[start:]
+            if  stop !=0:
+                y = y[:stop]
+                x = x[:stop]
+                    
 
-            ax.plot( x,
+            """
+            if channel_name == 'train_incprobs.5-1-1_nll':
+                y /= train_incprobs555_nll
+            if channel_name == 'train_incprobs.5-1-1_misclass':
+                y /= train_incprobs555_misclass                
+            if channel_name == 'train_incprobs.7-1-1_nll':
+                y /= train_incprobs755_nll
+            if channel_name == 'train_incprobs.7-1-1_misclass':
+                y /= train_incprobs755_misclass      
+            
+            if channel_name == 'train_y_nll':
+                y = y /train_objective *5
+                #y = y * 20
+            
+            
+            if channel_name == 'train_iptincprob.5_entropy':
+                y = y + 0.05
+            if channel_name == 'train_iptincprob.6_entropy':
+                y = y + 0.055
+            if channel_name == 'train_incprob.5_nll':
+                y = y + 0.009
+            if channel_name == 'train_y_entropy':
+                y = y * 5 + 0.023
+            """
+            #print 'channel_name before plot =', channel_name  #XD
+            plt.plot( x,
                       y,
-                      styles[idx % len(styles)],
-                      marker = '.', # add point margers to lines
+                      #styles[idx % len(styles)],
+                      styles[(idx+1) % len(styles)],     # XD add
                       label = channel_name)
 
-        plt.xlabel('# '+x_axis+'s')
-        ax.ticklabel_format( scilimits = (-3,3), axis = 'both')
+            if baseval !=0 and idx == 0:
+                y = y*0.0+baseval
+                plt.plot(x, y, styles[idx % len(styles)], label = 'baseline=' + str(baseval))   # XD add      
 
-        handles, labels = ax.get_legend_handles_labels()
-        lgd = ax.legend(handles, labels, loc='upper center',
-                bbox_to_anchor=(0.5,-0.1))
-        # 0.046 is the size of 1 legend box
-        fig.subplots_adjust(bottom=0.11 + 0.046 * len(final_codes))
+
+        #plt.legend(bbox_to_anchor=(1.05, 1),  loc=2, borderaxespad=0.)
+        plt.legend(loc=2)  #XD
+
 
         if options.out is None:
           plt.show()

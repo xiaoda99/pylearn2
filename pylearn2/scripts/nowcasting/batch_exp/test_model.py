@@ -33,13 +33,12 @@ test = CLOUDFLOW(
              predict_frame_size = (2,1,1),
              predict_interval = 2,
              examples_per_image = 100,
-             intensity_range= [2., 15.],
+             intensity_range= [0., 15.],
 #             max_intensity= 15.,
              normalization=norm,
              adaptive_sampling= 0,
              sample_prob= 1.,
-             filter_model='norm0_200-100_mom0.9_lr0.01_best.pkl',
-             filter_prob_range=[0.2, 0.8],
+             filter=True,
              show_mode=False
              )
 
@@ -297,8 +296,10 @@ def test_accuracy(test, model, prob_threshold):
     iterator = test.iterator(mode = 'even_sequential',
                             batch_size = batch_size,
                             data_specs = model.cost_from_X_data_specs())
+    X = model.get_input_space().make_batch_theano()
     for item in iterator:
         x_arg, y_arg = item
+#        print ' x_arg.shape =', x_arg.shape
 #        if X.ndim > 2:
 #            x_arg = test.get_topological_view(x_arg)
         stat = stat_fn(x_arg, y_arg)
