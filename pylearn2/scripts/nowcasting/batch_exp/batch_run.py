@@ -252,6 +252,9 @@ hyperparams_list = [
     ('gpu1', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 7), ('h0pad', 3), ('h1ks', 3), ('h1pad', 1), 
                           ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01), ('hl', 50)])),
     ('gpu1', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 9), ('h0pad', 4), ('h1ks', 3), ('h1pad', 1), 
+                          ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01), ('hl', 50)])),
+                    
+    ('gpu1', OrderedDict([('norm', 0), ('sp', .6), ('fltr', 0), ('h0ks', 5), ('h0pad', 2), ('h1ks', 3), ('h1pad', 1), 
                           ('h2nu', 40), ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01), ('hl', 50)])),          
 ]
 
@@ -261,6 +264,20 @@ hyperparams_list = [
 #    ('gpu0', OrderedDict([('norm', 0)])),
 #    ('gpu0', OrderedDict([('norm', 2), ('lr', .1)])),
     ('gpu', OrderedDict([('norm', 0), ('lr', .1)])),
+]
+
+base = 'cnn3h'
+hyperparams_list = [
+    ('gpu', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h2nu', 40), ('h2iip', 0.5), ('h2is', 2.),
+                         ('h2mcn', 10.), ('ymcn', 10.), ('wd', .0002), ('lr', .01)])),
+]
+
+base = 'cnn2h'
+hyperparams_list = [
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 2), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 1), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 3), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0pad', 2), ('h1ps', 6), ('ymcn', 99.), ('wd', .0002), ('lr', .01)])),
 ]
 
 if __name__ == "__main__":
