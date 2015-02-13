@@ -1,4 +1,4 @@
-from pylearn2.datasets.cloudflow import CLOUDFLOW
+from pylearn2.datasets.cloudflow import CLOUDFLOW, CloudflowMultiscale
 import math
 import cv2
 #import pylab as plt
@@ -30,6 +30,25 @@ test = CLOUDFLOW(
                  run_test=True,
                  model_file=model_file
                  )
+
+test = CloudflowMultiscale(
+                 which_set = 'test',
+                 num_examples = 350000,
+                 threshold = 2,
+                 pool_xys = [2, 4],
+                 pool_ts = [1, 1],
+                 cropped_sizes = [(3, 8, 8), (3, 6, 6)],
+                 pretrained_models = [
+                    'multiscale2hf32_ts[3,25,25]_pxy2_pt1_cs[3, 8, 8]_ps2_pi2_nv192_h0d200_h1d100_best.pkl', 
+                    'multiscale2hf32_ts[3,25,25]_pxy4_pt1_cs[3, 6, 6]_ps2_pi2_nv108_h0d200_h1d100_best.pkl'
+                    ], 
+                 train_frame_size = (3, 25, 25),
+                 predict_frame_size = (2,1,1),
+                 predict_interval = 2,
+                 examples_per_image = 100,
+                 adaptive_sampling = 0,
+                 sample_prob = 1.
+                )
 #test.gen_random_examples2(test_mode=True)
 
 def show_predictions(pred_stat):

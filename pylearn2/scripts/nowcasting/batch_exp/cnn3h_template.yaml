@@ -19,11 +19,11 @@
         batch_size: 512,
         layers: [ !obj:pylearn2.models.maxout.MaxoutConvC01B {
                      layer_name: 'h0',
-                     pad: %(h0pad)i,
+                     pad: 2,
                      tied_b: 1,
-                     num_channels: 32,
+                     num_channels: %(h0nc)i,
                      num_pieces: 2,
-                     kernel_shape: [%(h0ks)i, %(h0ks)i],
+                     kernel_shape: [5, 5],
                      pool_shape: [2, 2],
                      pool_stride: [2, 2],
                      irange: .0002,
@@ -32,7 +32,7 @@
                      layer_name: 'h1',
                      pad: 1,
                      tied_b: 1,
-                     num_channels: 64,
+                     num_channels: %(h1nc)i,
                      num_pieces: 2,
                      kernel_shape: [3, 3],
                      pool_shape: [2, 2],
@@ -41,15 +41,15 @@
                      max_kernel_norm: 99.9,
                  },!obj:pylearn2.models.maxout.Maxout {
                     layer_name: 'h2',
-                    irange: .0002,
+                    irange: .005,
                     num_units: %(h2nu)i,
                     num_pieces: 5,
-                    max_col_norm: %(h2mcn)f,
+                    max_col_norm: 9.9,
                  },!obj:pylearn2.models.mlp.Sigmoid {
                     layer_name: 'y',
-                    irange: .0002,
+                    irange: .005,
                     dim: 1,
-                    max_col_norm: %(ymcn)f,
+                    max_col_norm: 9.9,
                     monitor_style: 'classification',
                  }
                 ],
@@ -105,8 +105,8 @@
             },
         cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
             !obj:pylearn2.costs.mlp.dropout.Dropout {
-            input_include_probs: { 'h0' : 1., 'h1' : 1., 'h2' : %(h2iip)f },
-            input_scales: { 'h0' : 1., 'h1' : 1, 'h2' : %(h2is)f }
+            input_include_probs: { 'h0' : 1., 'h1' : 1., 'h2' : %(h2iip)f, 'y' : %(yiip)f },
+            input_scales: { 'h0' : 1., 'h1' : 1, 'h2' : %(h2is)f, 'y' : %(yis)f }
             },!obj:pylearn2.costs.mlp.WeightDecay {
                 coeffs: [%(wd)f, %(wd)f, %(wd)f, %(wd)f]
             }          

@@ -33,12 +33,12 @@ test = CLOUDFLOW(
              predict_frame_size = (2,1,1),
              predict_interval = 2,
              examples_per_image = 100,
-             intensity_range= [0., 15.],
-#             max_intensity= 15.,
+             intensity_range= [0., 2.],
+             max_intensity= 15.,
              normalization=norm,
              adaptive_sampling= 0,
              sample_prob= 1.,
-             filter=True,
+#             filter=True,
              show_mode=False
              )
 
@@ -50,7 +50,10 @@ def test_range(int_range, pred_fn, prob_threshold):
                  which_set='train',
                  num_examples=700000,
                  threshold=2,
+                 pool_xy=2,
+                 pool_t=1,
                  train_frame_size = (3,25,25),
+                 cropped_size= (3, 12, 12),
                  predict_frame_size = (2,1,1),
                  predict_interval = 2,
                  examples_per_image = 100,
@@ -58,9 +61,9 @@ def test_range(int_range, pred_fn, prob_threshold):
                  max_intensity= 15.,
                  normalization=norm,
                  adaptive_sampling= 0,
-                 sample_prob= 1.,
-                 filter_model='norm2_200-100_mom0.9_lr0.01_best.pkl',
-                 filter_prob_range=[0.2, 0.8],
+                 sample_prob= .6,
+#                 filter_model='norm2_200-100_mom0.9_lr0.01_best.pkl',
+#                 filter_prob_range=[0.2, 0.8],
                  )
     preds = []
 #    rains = []
