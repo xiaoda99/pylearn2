@@ -599,9 +599,9 @@ hyperparams_list = [
 
 base = 'cnnpadless2+1'
 hyperparams_list = [
-    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('nu', 64), ('wd', .0002), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('nu', 64), ('wd', .0002), ('lr', .01)])),
     ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 2), ('nu', 16), ('wd', .0002), ('lr', .01)])),
-    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 4), ('h1ps', 1), ('nu', 32), ('wd', .0002), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 4), ('h1ps', 1), ('nu', 32), ('wd', .0002), ('lr', .01)])),
     ('gpu1', OrderedDict([('h0ks', 7), ('h0p', 3), ('h1ks', 3), ('h1ps', 1), ('nu', 64), ('wd', .0002), ('lr', .01)])),
     ('gpu1', OrderedDict([('h0ks', 7), ('h0p', 3), ('h1ks', 3), ('h1ps', 2), ('nu', 16), ('wd', .0002), ('lr', .01)])),
     ('gpu1', OrderedDict([('h0ks', 7), ('h0p', 3), ('h1ks', 4), ('h1ps', 1), ('nu', 32), ('wd', .0002), ('lr', .01)])),
