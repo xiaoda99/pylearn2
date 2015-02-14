@@ -622,12 +622,25 @@ hyperparams_list = [
 
 base = 'cnnpadless3+1'
 hyperparams_list = [
-    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 32), ('np', 2)])),
-    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 32), ('np', 5)])),
-    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 64), ('np', 2)])),
-    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 64), ('np', 2)])),
-    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 64), ('np', 5)])),
-    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 128), ('np', 2)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 32), ('np', 2), ('wd', 0.)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 32), ('np', 5), ('wd', 0.)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 64), ('np', 2), ('wd', 0.)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 32), ('np', 2), ('wd', .00005)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 32), ('np', 5), ('wd', .00005)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 64), ('np', 2), ('wd', .00005)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 32), ('np', 2), ('wd', .0001)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 32), ('np', 5), ('wd', .0001)])),
+    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 64), ('np', 2), ('wd', .0001)])),
+    
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 64), ('np', 2), ('wd', 0.)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 64), ('np', 5), ('wd', 0.)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 128), ('np', 2), ('wd', 0.)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 64), ('np', 2), ('wd', .00005)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 64), ('np', 5), ('wd', .00005)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 128), ('np', 2), ('wd', .00005)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 64), ('np', 2), ('wd', .0001)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 64), ('np', 5), ('wd', .0001)])),
+    ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 128), ('np', 2), ('wd', .0001)])),
 ]
 
 from subprocess import call
