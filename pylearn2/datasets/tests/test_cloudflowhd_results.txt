@@ -1,0 +1,65 @@
+test = CloudFlowHD(  
+                 which_set='test',
+                 num_examples=400000,
+                 examples_per_image=100,
+                 t_smooth_win=2,
+                 reverse_flow=False
+                 )
+exact flow
+5:flow0.790.800.80
+10:100.650.670.66
+15:150.550.590.57
+20:200.490.530.51
+exact mean flow
+5:flow0.800.8000.80
+10:100.6700.680.67
+15:150.580.600.59
+20:200.480.5300.51
+approximate flow
+5:flow0.7900.800.80
+10:100.660.670.66
+15:150.570.5800.58
+20:200.510.520.52
+approximate mean flow
+5:flow0.810.800.81
+10:100.6800.6700.68
+15:150.590.5900.59
+20:200.520.53000.53
+
+test = CloudFlowHD(  
+                 which_set='test',
+                 num_examples=400000,
+                 examples_per_image=10,
+                 t_smooth_win=1,
+                 pre_ds=(1,2,2),
+                 train_frame_size = (3,31,31),
+                 pred_len=8,
+                 pred_interval=4,
+                 reverse_flow=False
+                 )
+exact flow
+4:	0.843	0.787	0.814
+8:	0.713	0.679	0.695
+approximate mean flow
+4:	0.862	0.779	0.818
+8:	0.744	0.676	0.709
+
+test = CloudFlowHD(  
+                 which_set='test',
+                 num_examples=400000,
+                 examples_per_image=10,
+                 t_smooth_win=1,
+                 pre_ds=(2,2,2),
+                 train_frame_size = (3,31,31),
+                 pred_len=4,
+                 pred_interval=2,
+                 reverse_flow=False
+                 )
+exact flow
+2:	0.836	0.793	0.814
+4:	0.714	0.673	0.693
+approximate mean flow
+2:	0.838	0.790	0.813
+4:	0.722	0.680	0.701
+
+

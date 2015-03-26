@@ -1,0 +1,31 @@
+*** PROFILER RESULTS ***
+predict (/home/xd/projects/pylearn2/pylearn2/datasets/cloudflowhd.py:122)
+function called 4650 times
+
+         4013210 function calls in 53.174 CPU seconds
+
+   Ordered by: cumulative time, internal time, call count
+   List reduced from 45 to 40 due to restriction <40>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     4650    0.400    0.000   53.174    0.011 cloudflowhd.py:122(predict)
+    14500    1.211    0.000   25.165    0.002 cloudflowhd.py:268(clip_track_frames)
+    87000    3.955    0.000   23.830    0.000 cloudflowhd.py:245(_clip_track_frame)
+    14500   12.062    0.001   12.590    0.001 function_module.py:482(__call__)
+     4650    0.999    0.000   11.817    0.003 cloudflowhd.py:219(flow_back)
+    87000   11.084    0.000   11.084    0.000 {cv2.warpAffine}
+    95420    1.458    0.000   10.239    0.000 cloudflowhd.py:197(_get_flow)
+    95420    0.196    0.000    7.562    0.000 {method 'mean' of 'numpy.ndarray' objects}
+    95420    1.355    0.000    7.366    0.000 _methods.py:42(_mean)
+   109920    5.703    0.000    5.703    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+   174000    3.525    0.000    3.525    0.000 {cv2.resize}
+   283920    2.817    0.000    2.817    0.000 {numpy.core.multiarray.array}
+    14500    1.204    0.000    2.562    0.000 cloudflowhd.py:35(downsample)
+   370920    2.281    0.000    2.281    0.000 {method 'astype' of 'numpy.ndarray' objects}
+    87000    0.773    0.000    0.773    0.000 {cv2.cartToPolar}
+    87000    0.434    0.000    0.733    0.000 cloudflowhd.py:240(_get_base_radius)
+    14500    0.122    0.000    0.610    0.000 fromnumeric.py:2022(prod)
+   182420    0.548    0.000    0.548    0.000 cloudflowhd.py:207(_inbounds)
+    14500    0.019    0.000    0.488    0.000 _methods.py:20(_prod)
+    87000    0.480    0.000    0.480    0.000 cloudflowhd.py:235(_get_frame)
+

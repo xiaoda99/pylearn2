@@ -1,0 +1,135 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.cloudflowhd.CloudFlowHD {
+                 which_set: 'train',
+                 examples_large: 400000,
+                 threshold: 3,
+                 tsmooth_win: 1,
+                 clip_shape: [6, 49, 49],
+                 ds_shape: [2, 4, 4],
+                 mean_tds: 1,
+                 pred_len: 20,
+                 interval_len: 5,
+                 pred_interval_idx: 3,
+                 examples_per_image: 50,
+                 sample_prob: .6,
+    },
+    model: !obj:pylearn2.models.mlp.MLP {
+        batch_size: 512,
+        layers: [ !obj:pylearn2.models.maxout.MaxoutConvC01B {
+                     layer_name: 'h0',
+                     pad: 2,
+                     tied_b: 1,
+                     num_channels: 32,
+                     num_pieces: 2,
+                     kernel_shape: [5, 5],
+                     pool_shape: [2, 2],
+                     pool_stride: [2, 2],
+                     irange: .0002,
+                     max_kernel_norm: 99.9,
+                 },!obj:pylearn2.models.maxout.MaxoutConvC01B {
+                     layer_name: 'h1',
+                     pad: 0,
+                     tied_b: 1,
+                     num_channels: 32,
+                     num_pieces: 2,
+                     kernel_shape: [3, 3],
+                     pool_shape: [1, 1],
+                     pool_stride: [1, 1],
+                     irange: .0002,
+                     max_kernel_norm: 99.9,
+                 },!obj:pylearn2.models.maxout.Maxout {
+                    layer_name: 'h2',
+                    irange: .005,
+                    num_units: 64,
+                    num_pieces: 2,
+                    max_col_norm: 99.9,
+                 },!obj:pylearn2.models.mlp.Sigmoid {
+                    layer_name: 'y',
+                    irange: .005,
+                    dim: 4,
+                    max_col_norm: 99.9,
+                 }
+                ],
+        input_space: !obj:pylearn2.space.Conv2DSpace {
+            shape: [12, 12],
+            num_channels: 3,
+            axes: ['c', 0, 1, 'b']
+        },
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: 512,
+        learning_rate: 0.010000,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: .9
+        },
+        train_iteration_mode: 'even_shuffled_sequential',
+        monitor_iteration_mode: 'even_sequential',
+        monitoring_dataset:
+            {
+                'train' : *train,
+                'valid' : &valid !obj:pylearn2.datasets.cloudflowhd.CloudFlowHD {
+                 which_set: 'valid',
+                 examples_large: 300000,
+                 threshold: 3,
+                 tsmooth_win: 1,
+                 clip_shape: [6, 49, 49],
+                 ds_shape: [2, 4, 4],
+                 mean_tds: 1,
+                 pred_len: 20,
+                 interval_len: 5,
+                 pred_interval_idx: 3,
+                 examples_per_image: 50,
+                 sample_prob: .6,
+                 },
+                'test' : &test !obj:pylearn2.datasets.cloudflowhd.CloudFlowHD {
+                 which_set: 'test',
+                 examples_large: 400000,
+                 threshold: 3,
+                 tsmooth_win: 1,
+                 clip_shape: [6, 49, 49],
+                 ds_shape: [2, 4, 4],
+                 mean_tds: 1,
+                 pred_len: 20,
+                 interval_len: 5,
+                 pred_interval_idx: 3,
+                 examples_per_image: 50,
+                 sample_prob: 1.,
+                 },
+            },
+        cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
+            !obj:pylearn2.costs.mlp.dropout.Dropout {
+            input_include_probs: { 'h0' : 1., 'h1' : 1., 'h2' : .8},
+            input_scales: { 'h0' : 1., 'h1' : 1., 'h2' : 1.25}
+            },!obj:pylearn2.costs.mlp.WeightDecay {
+                coeffs: [0.000200, 0.000200, 0.000200, 0.000200 ]
+            }          
+            ]
+        },
+        
+        termination_criterion: !obj:pylearn2.termination_criteria.And {
+            criteria: [
+                !obj:pylearn2.termination_criteria.MonitorBased {
+                    channel_name: "valid_y_01_loss",
+                    prop_decrease: 0.,
+                    N: 10
+                },
+                !obj:pylearn2.termination_criteria.EpochCounter {
+                    max_epochs: 100
+                }
+            ]
+        }
+},
+    extensions: [
+        !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+             channel_name: "valid_y_01_loss",
+             save_path: "4out_cnn_mtds1_i3_best.pkl"
+        },!obj:pylearn2.training_algorithms.sgd.OneOverEpoch {
+             start: 5,
+             half_life: 50,
+             min_lr: 0.00001
+        },
+    ],
+    save_path: "4out_cnn_mtds1_i3.pkl",
+    save_freq: 1
+}
+

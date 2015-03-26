@@ -2392,7 +2392,7 @@ class Sigmoid(Linear):
         assert rval.ndim == 2
         return rval
 
-    def get_detection_channels_from_state(self, state, target):
+    def get_detection_channels_from_state_old(self, state, target):
         """
         Returns monitoring channels when using the layer to do detection
         of binary events.
@@ -2451,6 +2451,42 @@ class Sigmoid(Linear):
         rval['per_output_f1_mean'] = f1.mean()
         rval['per_output_f1_min'] = f1.min()
 
+        return rval
+    
+    # rewritten by XD
+    def get_detection_channels_from_state(self, state, target):
+        rval = OrderedDict()
+        y_hat = state > 0.5
+        y = target > 0.5
+        
+        wrong_bit = T.cast(T.neq(y, y_hat), state.dtype)
+        rval['01_loss'] = wrong_bit.mean()
+        
+        misclass = wrong_bit.mean(axis=0)
+        rval['misclass_0'] = misclass[0]
+        rval['misclass_1'] = misclass[1]
+        rval['misclass_2'] = misclass[2]
+        rval['misclass_3'] = misclass[3]
+        
+        tp = T.cast(y * y_hat, config.floatX).mean(axis=0)
+        pred = T.cast(y_hat, config.floatX).mean(axis=0)
+        rain = T.cast(y, config.floatX).mean(axis=0)
+
+        rval['tp_0'] = tp[0]
+        rval['tp_1'] = tp[1]
+        rval['tp_2'] = tp[2]
+        rval['tp_3'] = tp[3]
+        
+        rval['pred_0'] = pred[0]
+        rval['pred_1'] = pred[1]
+        rval['pred_2'] = pred[2]
+        rval['pred_3'] = pred[3]
+        
+        rval['rain_0'] = rain[0]
+        rval['rain_1'] = rain[1]
+        rval['rain_2'] = rain[2]
+        rval['rain_3'] = rain[3]
+        
         return rval
 
     @wraps(Layer.get_layer_monitoring_channels)

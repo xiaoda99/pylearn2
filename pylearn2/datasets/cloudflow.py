@@ -1113,10 +1113,10 @@ class CloudflowMultiscale(CLOUDFLOW):
         yall = CLOUDFLOW.y_large[self.which_set][:self.example_cnt]
         
         print 'Downsampling...'
-#        self.pretrained_models = [
-#                    'multiscale2hf32_ts[3,25,25]_pxy2_pt1_cs[3, 8, 8]_ps2_pi2_nv192_h0d200_h1d100_best.pkl', 
-#                    'multiscale2hf32_ts[3,25,25]_pxy4_pt1_cs[3, 6, 6]_ps2_pi2_nv108_h0d200_h1d100_best.pkl'
-#                    ]
+        self.pretrained_models = [
+                    'multiscale2hf32_ts[3,25,25]_pxy2_pt1_cs[3, 8, 8]_ps2_pi2_nv192_h0d200_h1d100_best.pkl', 
+                    'multiscale2hf32_ts[3,25,25]_pxy4_pt1_cs[3, 6, 6]_ps2_pi2_nv108_h0d200_h1d100_best.pkl'
+                    ]
         if len(self.pretrained_models) == 0:
             assert sum(self.n_layers) == 0
             

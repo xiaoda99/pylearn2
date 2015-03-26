@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 from pylearn2.config import yaml_parse
@@ -38,6 +39,33 @@ def print_results(model_path, results_path):
     print >>f, model_path
     f.close()
         
+def print_results_4out(model_path, results_path):
+    f = open(results_path, 'a+')
+    
+    model = serial.load(model_path)
+    monitor = model.monitor
+    channels = monitor.channels
+    print >>f, "%.2f  %.2f\t" % (channels['train_y_01_loss'].val_record[-1]*100, 
+                                channels['valid_y_01_loss'].val_record[-1]*100),
+    
+    datasets = ('test',)    
+    n_intervals = 4
+    for which_set in datasets:
+        for i in range(n_intervals):
+            pred = channels[which_set + '_y_pred_' + str(i)].val_record[-1]
+            rain = channels[which_set + '_y_rain_' + str(i)].val_record[-1]
+            tp = channels[which_set + '_y_tp_' + str(i)].val_record[-1] # true positive
+            if pred == 0 and rain == 0:
+                precision = 1.
+                recall = 1.
+            else:
+                precision = tp * 1. / pred
+                recall = tp * 1. / rain
+            f1 = 2. * precision * recall / (precision + recall)
+            print >>f, "%.2f  %.2f  %.2f\t" % (precision*100, recall*100, f1*100),
+    print >>f, model_path        
+    f.close()
+    
 base = 'cnn'
 #hyperparams_list = [
 #                    {'base' : 'mlp', 'track' : 1, 'sr00' : 1.},
@@ -606,20 +634,6 @@ hyperparams_list = [
     ('gpu', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 4), ('h1ps', 3), ('wd', .0002), ('lr', .01)])),
 ]
 
-base = 'cnnpadless2+1'
-# default: h1p: 0, np: 5
-hyperparams_list = [
-#    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('nu', 64), ('wd', .0002), ('lr', .01)])),
-#    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 2), ('nu', 16), ('wd', .0002), ('lr', .01)])),
-#    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 4), ('h1ps', 1), ('nu', 32), ('wd', .0002), ('lr', .01)])),
-#    ('gpu1', OrderedDict([('h0ks', 7), ('h0p', 3), ('h1ks', 3), ('h1ps', 1), ('nu', 64), ('wd', .0002), ('lr', .01)])),
-#    ('gpu1', OrderedDict([('h0ks', 7), ('h0p', 3), ('h1ks', 3), ('h1ps', 2), ('nu', 16), ('wd', .0002), ('lr', .01)])),
-#    ('gpu1', OrderedDict([('h0ks', 7), ('h0p', 3), ('h1ks', 4), ('h1ps', 1), ('nu', 32), ('wd', .0002), ('lr', .01)])),
-#
-#    ('gpu', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1p', 1), ('h1ps', 2), ('nu', 40), ('np', 5), ('wd', .0002), ('lr', .01)])), # repeat previous exp
-    ('gpu', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1p', 0), ('h1ps', 1), ('nu', 64), ('np', 2), ('wd', .0002), ('lr', .01)])),
-]
-
 base = 'cnnpadless3+1'
 hyperparams_list = [
     ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 3), ('nu', 32), ('np', 2), ('wd', 0.)])),
@@ -643,6 +657,57 @@ hyperparams_list = [
     ('gpu1', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('h2ks', 2), ('nu', 128), ('np', 2), ('wd', .0001)])),
 ]
 
+base = 'cnnpadless2+1'
+# default: h1p: 0, np: 5
+hyperparams_list = [
+#    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 1), ('nu', 64), ('wd', .0002), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1ps', 2), ('nu', 16), ('wd', .0002), ('lr', .01)])),
+#    ('gpu0', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 4), ('h1ps', 1), ('nu', 32), ('wd', .0002), ('lr', .01)])),
+#    ('gpu1', OrderedDict([('h0ks', 7), ('h0p', 3), ('h1ks', 3), ('h1ps', 1), ('nu', 64), ('wd', .0002), ('lr', .01)])),
+#    ('gpu1', OrderedDict([('h0ks', 7), ('h0p', 3), ('h1ks', 3), ('h1ps', 2), ('nu', 16), ('wd', .0002), ('lr', .01)])),
+#    ('gpu1', OrderedDict([('h0ks', 7), ('h0p', 3), ('h1ks', 4), ('h1ps', 1), ('nu', 32), ('wd', .0002), ('lr', .01)])),
+#
+#    ('gpu', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1p', 1), ('h1ps', 2), ('nu', 40), ('np', 5), ('wd', .0002), ('lr', .01)])), # repeat previous exp
+#    ('gpu', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1p', 0), ('h1ps', 1), ('nu', 64), ('np', 2), ('wd', .0002), ('lr', .01)])),
+    ('gpu', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1p', 0), ('h1ps', 1), ('nu', 64), ('np', 2), ('wd', .0), ('lr', .01)])),
+    ('gpu', OrderedDict([('h0ks', 5), ('h0p', 2), ('h1ks', 3), ('h1p', 0), ('h1ps', 1), ('nu', 64), ('np', 5), ('wd', .0), ('lr', .01)])),
+]
+
+def s(list):
+    return str(list).replace(' ', '')
+
+base = '4out'
+hyperparams_list = [
+#    ('gpu', OrderedDict([('clip', s([6,61,61])), ('ds', s([2,4,4])), ('mtds', 1), ('nvis', 675)])),
+#    ('gpu', OrderedDict([('clip', s([9,49,49])), ('ds', s([3,4,4])), ('mtds', 1), ('nvis', 432)])),
+#    ('gpu', OrderedDict([('clip', s([9,49,49])), ('ds', s([3,4,4])), ('mtds', 0), ('nvis', 432)])),
+#    ('gpu', OrderedDict([('clip', s([9,61,61])), ('ds', s([3,4,4])), ('mtds', 1), ('nvis', 675)])),
+#    ('gpu', OrderedDict([('clip', s([9,61,61])), ('ds', s([3,4,4])), ('mtds', 0), ('nvis', 675)])),
+    
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 1), ('nvis', 432)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432)])),
+#    ('gpu', OrderedDict([('clip', s([6,41,41])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 300)])),
+#    ('gpu', OrderedDict([('clip', s([6,33,33])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 192)])),
+    
+    
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 0)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 1)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 2)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 3)])),
+]
+
+base = '4out_cnn'
+hyperparams_list = [
+    ('gpu', OrderedDict([('mtds', 1), ('i', 0)])),
+    ('gpu', OrderedDict([('mtds', 1), ('i', 1)])),
+    ('gpu', OrderedDict([('mtds', 1), ('i', 2)])),
+    ('gpu', OrderedDict([('mtds', 1), ('i', 3)])),
+    ('gpu', OrderedDict([('mtds', 0), ('i', 0)])),
+    ('gpu', OrderedDict([('mtds', 0), ('i', 1)])),
+    ('gpu', OrderedDict([('mtds', 0), ('i', 2)])),
+    ('gpu', OrderedDict([('mtds', 0), ('i', 3)])),
+]
+
 from subprocess import call
                       
 if __name__ == "__main__":
@@ -663,4 +728,5 @@ if __name__ == "__main__":
             call(['train.py', model_base + '.yaml'])
             print 'Finished'
             model_path = model_base + '_best.pkl'
-            print_results(model_path, results_path)
+            if os.path.isfile(model_path):
+                print_results_4out(model_path, results_path)

@@ -1,0 +1,23 @@
+*** PROFILER RESULTS ***
+predict (/home/xd/projects/pylearn2/pylearn2/datasets/cloudflowhd.py:117)
+function called 4650 times
+
+         4135020 function calls in 78.416 CPU seconds
+
+   Ordered by: cumulative time, internal time, call count
+   List reduced from 49 to 40 due to restriction <40>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     4650    0.431    0.000   78.406    0.017 cloudflowhd.py:117(predict)
+    14580   34.744    0.002   36.572    0.003 function_module.py:482(__call__)
+    14580    1.162    0.000   25.114    0.002 cloudflowhd.py:263(clip_track_frames)
+    87480    4.064    0.000   23.803    0.000 cloudflowhd.py:240(_clip_track_frame)
+     4650    1.054    0.000   12.864    0.003 cloudflowhd.py:214(flow_back)
+    95815    1.620    0.000   11.233    0.000 cloudflowhd.py:192(_get_flow)
+    87480   10.986    0.000   10.986    0.000 {cv2.warpAffine}
+    95815    0.168    0.000    8.216    0.000 {method 'mean' of 'numpy.ndarray' objects}
+    95815    1.600    0.000    8.048    0.000 _methods.py:42(_mean)
+   124975    6.412    0.000    6.412    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+   174960    3.762    0.000    3.762    0.000 {cv2.resize}
+    14580    0.980    0.000    2.691    0.000 cloudflowhd.py:35(downsample)
+
