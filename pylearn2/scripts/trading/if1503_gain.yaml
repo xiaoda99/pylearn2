@@ -1,0 +1,76 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.if_monthly.IFMonthlyGain {
+        discount: 1,
+        direction: 0,
+        sight: 4,
+        hist_len: 1,
+        which_set: 'train'
+    },
+    model: !obj:pylearn2.models.mlp.MLP {
+        layers: [
+                 !obj:pylearn2.models.mlp.RectifiedLinear {
+                     layer_name: 'h0',
+                     dim: 100,
+                     irange: .005,
+                     max_col_norm: 9.9365,
+                 },
+                 !obj:pylearn2.models.mlp.RectifiedLinear {
+                     layer_name: 'h1',
+                     dim: 100,
+                     irange: .005,
+                     max_col_norm: 9.9365,
+                 },
+                 !obj:pylearn2.models.mlp.Linear {
+                     layer_name: 'y',
+                     dim: 1,
+                     irange: .005,
+                     max_col_norm: 9.9365,
+                 }
+                ],
+        nvis: 49,
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: 512,
+        learning_rate: .01,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: .5,
+        },
+        monitoring_dataset:
+            {
+                'train' : *train,
+                'test'  : !obj:pylearn2.datasets.if_monthly.IFMonthlyGain {
+                              discount: 1,
+                              direction: 0,
+                              sight: 4,
+                              hist_len: 1,
+                              which_set: 'test',
+                          }
+            },
+        cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
+            !obj:pylearn2.costs.cost.MethodCost {
+                method: 'cost_from_X'
+            }, !obj:pylearn2.costs.mlp.WeightDecay {
+                coeffs: [ .00005, .00005, .00005 ]
+            }
+            ]
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.MonitorBased {
+            channel_name: "test_term_0",
+            prop_decrease: 0.,
+            N: 10
+        },
+    },
+    extensions: [
+        !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+             channel_name: 'test_term_0',
+             save_path: "${PYLEARN2_TRAIN_FILE_FULL_STEM}_feat49_buy_sight4_best.pkl"
+        },
+        !obj:pylearn2.training_algorithms.learning_rule.MomentumAdjustor {
+            start: 1,
+            saturate: 250,
+            final_momentum: .7
+        }
+    ],
+    save_path: "${PYLEARN2_TRAIN_FILE_FULL_STEM}_feat49_buy_sight4.pkl",
+    save_freq: 1
+}

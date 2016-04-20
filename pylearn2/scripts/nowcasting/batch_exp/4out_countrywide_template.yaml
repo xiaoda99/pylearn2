@@ -1,0 +1,125 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.cloudflowhd.CloudFlowHD {
+                 which_set: 'train',
+                 examples_large: 150000,
+                 threshold: 3,
+                 tsmooth_win: 1,
+                 clip_shape: %(clip)s,
+                 ds_shape: %(ds)s,
+                 mean_tds: %(mtds)i,
+                 pred_len: 20,
+                 interval_len: 5,
+                 delay: %(delay)i,
+                 pred_interval_idx: %(i)i,
+                 examples_per_image: 800,
+                 video_shape: [1800, 1066, 1000],
+                 image_border: [40, 40],
+                 train_slot: 85,
+                 valid_slot: 30,
+                 test_slot: 40, 
+                 sample_prob: .6,
+    },
+    model: !obj:pylearn2.models.mlp.MLP {
+        batch_size: 512,
+        layers: [ !obj:pylearn2.models.mlp.RectifiedLinear {
+                    layer_name: 'h0',
+                    dim: 200,
+                    irange: .0002,
+                },!obj:pylearn2.models.mlp.RectifiedLinear {
+                    layer_name: 'h1',
+                    dim: 100,
+                    irange: .0002,
+                }, !obj:pylearn2.models.mlp.Sigmoid {
+                    layer_name: 'y',
+                    irange: .005,
+                    dim: 4,
+                 }
+                ],
+        nvis: %(nvis)i,
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: 512,
+        learning_rate: .01,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: .9
+        },
+        train_iteration_mode: 'even_shuffled_sequential',
+        monitor_iteration_mode: 'even_sequential',
+        monitoring_dataset:
+            {
+                'train' : *train,
+                'valid' : &valid !obj:pylearn2.datasets.cloudflowhd.CloudFlowHD {
+                 which_set: 'valid',
+                 examples_large: 50000,
+                 threshold: 3,
+                 tsmooth_win: 1,
+                 clip_shape: %(clip)s,
+                 ds_shape: %(ds)s,
+                 mean_tds: %(mtds)i,
+                 pred_len: 20,
+                 interval_len: 5,
+                 delay: %(delay)i,
+                 pred_interval_idx: %(i)i,
+                 examples_per_image: 800,
+                 video_shape: [1800, 1066, 1000],
+                 image_border: [40, 40],
+                 train_slot: 85,
+                 valid_slot: 30,
+                 test_slot: 40, 
+                 sample_prob: .6,
+                 },
+                'test' : &test !obj:pylearn2.datasets.cloudflowhd.CloudFlowHD {
+                 which_set: 'test',
+                 examples_large: 100000,
+                 threshold: 3,
+                 tsmooth_win: 1,
+                 clip_shape: %(clip)s,
+                 ds_shape: %(ds)s,
+                 mean_tds: %(mtds)i,
+                 pred_len: 20,
+                 interval_len: 5,
+                 delay: %(delay)i,
+                 pred_interval_idx: %(i)i,
+                 examples_per_image: 800,
+                 video_shape: [1800, 1066, 1000],
+                 image_border: [40, 40],
+                 train_slot: 85,
+                 valid_slot: 30,
+                 test_slot: 40, 
+                 sample_prob: 1.,
+                 },
+            },
+        cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
+            !obj:pylearn2.costs.mlp.Default {
+            }, !obj:pylearn2.costs.mlp.WeightDecay {
+                coeffs: [.0002, .0002, .0002]
+            }          
+            ]
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.And {
+            criteria: [
+                !obj:pylearn2.termination_criteria.MonitorBased {
+                    channel_name: "valid_y_01_loss",
+                    prop_decrease: 0.,
+                    N: 10
+                },
+                !obj:pylearn2.termination_criteria.EpochCounter {
+                    max_epochs: 100
+                }
+            ]
+        }
+    },
+    extensions: [
+        !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+             channel_name: "valid_y_01_loss",
+             save_path: "%(save_base)s_best.pkl"
+        },!obj:pylearn2.training_algorithms.sgd.OneOverEpoch {
+             start: 5,
+             half_life: 50,
+             min_lr: 0.00001
+        },
+    ],
+    save_path: "%(save_base)s.pkl",
+    save_freq: 1
+}
+

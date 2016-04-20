@@ -1,0 +1,110 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.cloudflowhd.CloudFlowHD {
+                 which_set: 'train',
+                 examples_large: 600000,
+                 threshold: 3,
+                 tsmooth_win: 1,
+                 clip_shape: [6,49,49],
+                 ds_shape: [2,4,4],
+                 mean_tds: 0,
+                 pred_len: 20,
+                 interval_len: 5,
+                 delay: 1,
+                 pred_interval_idx: 2,
+                 examples_per_image: 50,
+                 sample_prob: .6,
+    },
+    model: !obj:pylearn2.models.mlp.MLP {
+        batch_size: 512,
+        layers: [ !obj:pylearn2.models.mlp.RectifiedLinear {
+                    layer_name: 'h0',
+                    dim: 200,
+                    irange: .0002,
+                },!obj:pylearn2.models.mlp.RectifiedLinear {
+                    layer_name: 'h1',
+                    dim: 100,
+                    irange: .0002,
+                }, !obj:pylearn2.models.mlp.Sigmoid {
+                    layer_name: 'y',
+                    irange: .005,
+                    dim: 4,
+                 }
+                ],
+        nvis: 432,
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: 512,
+        learning_rate: .01,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: .9
+        },
+        train_iteration_mode: 'even_shuffled_sequential',
+        monitor_iteration_mode: 'even_sequential',
+        monitoring_dataset:
+            {
+                'train' : *train,
+                'valid' : &valid !obj:pylearn2.datasets.cloudflowhd.CloudFlowHD {
+                 which_set: 'valid',
+                 examples_large: 500000,
+                 threshold: 3,
+                 tsmooth_win: 1,
+                 clip_shape: [6,49,49],
+                 ds_shape: [2,4,4],
+                 mean_tds: 0,
+                 pred_len: 20,
+                 interval_len: 5,
+                 delay: 1,
+                 pred_interval_idx: 2,
+                 examples_per_image: 50,
+                 sample_prob: .6,
+                 },
+                'test' : &test !obj:pylearn2.datasets.cloudflowhd.CloudFlowHD {
+                 which_set: 'test',
+                 examples_large: 600000,
+                 threshold: 3,
+                 tsmooth_win: 1,
+                 clip_shape: [6,49,49],
+                 ds_shape: [2,4,4],
+                 mean_tds: 0,
+                 pred_len: 20,
+                 interval_len: 5,
+                 delay: 1,
+                 pred_interval_idx: 2,
+                 examples_per_image: 50,
+                 sample_prob: 1.,
+                 },
+            },
+        cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
+            !obj:pylearn2.costs.mlp.Default {
+            }, !obj:pylearn2.costs.mlp.WeightDecay {
+                coeffs: [.0002, .0002, .0002]
+            }          
+            ]
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.And {
+            criteria: [
+                !obj:pylearn2.termination_criteria.MonitorBased {
+                    channel_name: "valid_y_01_loss",
+                    prop_decrease: 0.,
+                    N: 10
+                },
+                !obj:pylearn2.termination_criteria.EpochCounter {
+                    max_epochs: 100
+                }
+            ]
+        }
+    },
+    extensions: [
+        !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+             channel_name: "valid_y_01_loss",
+             save_path: "4out_delay_clip[6,49,49]_ds[2,4,4]_mtds0_nvis432_i2_delay1_best.pkl"
+        },!obj:pylearn2.training_algorithms.sgd.OneOverEpoch {
+             start: 5,
+             half_life: 50,
+             min_lr: 0.00001
+        },
+    ],
+    save_path: "4out_delay_clip[6,49,49]_ds[2,4,4]_mtds0_nvis432_i2_delay1.pkl",
+    save_freq: 1
+}
+

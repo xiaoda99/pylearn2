@@ -983,6 +983,10 @@ class MLP(Layer):
             return rlist
         return rval
 
+    # used by PretrainedLayer, added by XD
+    def upward_pass(self, state_below):
+        return self.fprop(state_below)
+    
     def apply_dropout(self, state, include_prob, scale, theano_rng,
                       input_space, mask_value=0, per_example=True):
         """
@@ -1260,6 +1264,12 @@ class Softmax(Layer):
                 misclass = T.cast(misclass, config.floatX)
                 rval['misclass'] = misclass
                 rval['nll'] = self.cost(Y_hat=state, Y=targets)
+                # XD
+                rval['action0'] = T.cast(T.eq(y_hat, 0).mean(), config.floatX)
+                rval['action1'] = T.cast(T.eq(y_hat, 1).mean(), config.floatX)
+                rval['action2'] = T.cast(T.eq(y_hat, 2).mean(), config.floatX)
+                rval['action3'] = T.cast(T.eq(y_hat, 3).mean(), config.floatX)
+                rval['action4'] = T.cast(T.eq(y_hat, 4).mean(), config.floatX)
 
         return rval
 
@@ -2138,12 +2148,63 @@ class Linear(Layer):
 
         row_norms = T.sqrt(sq_W.sum(axis=1))
         col_norms = T.sqrt(sq_W.sum(axis=0))
-
+                
         # added by XD
-        return OrderedDict([('col_norms_min',  col_norms.min()),
+        rval = OrderedDict([('col_norms_min',  col_norms.min()),
                             ('col_norms_mean', col_norms.mean()),
                             ('col_norms_max',  col_norms.max()), ])
         
+        # added by XD for trading experiments
+        if targets is not None:
+            y_hat = state.mean(axis=1)
+            y = targets.mean(axis=1)
+            misclass = (y * y_hat < 0).mean() # prediction and target have different signs
+            misclass = T.cast(misclass, config.floatX)
+            rval['misclass'] = misclass
+            
+            y_hat_mean = y_hat.mean()
+            y_hat_stdev = T.sqrt(T.square(y_hat - y_hat_mean).mean())
+            rval['pred_mean'] = T.cast(y_hat_mean, config.floatX)
+            rval['pred_stdev'] = T.cast(y_hat_stdev, config.floatX)
+            
+            y_mean = y.mean()
+            y_stdev = T.sqrt(T.square(y - y_mean).mean())
+            rval['target_mean'] = T.cast(y_mean, config.floatX)
+            rval['target_stdev'] = T.cast(y_stdev, config.floatX)
+            
+            wrong = T.lt(y * y_hat, 0)
+            filter1 = T.ge(T.abs_(y_hat - y_hat_mean), y_hat_stdev * 1.) 
+            filter1.name = 'stdev1'
+            filter15 = T.ge(T.abs_(y_hat - y_hat_mean), y_hat_stdev * 1.5) 
+            filter15.name = 'stdev15' 
+            filter2 = T.ge(T.abs_(y_hat - y_hat_mean), y_hat_stdev * 2.) 
+            filter2.name = 'stdev2'
+            for filter in [filter1, filter15, filter2]:
+                rval[filter.name+'_misclass'] = T.cast((wrong * filter).mean() / filter.mean(), config.floatX)
+                rval[filter.name+'_pct'] = T.cast(filter.mean(), config.floatX)
+            
+#            gain_pos = (y > 0).mean() 
+#            gain_pos = T.cast(gain_pos, config.floatX)
+#            rval['gain_pos'] = gain_pos
+#            gain_neg = (y < 0).mean() 
+#            gain_neg = T.cast(gain_neg, config.floatX)
+#            rval['gain_neg'] = gain_neg
+#            gain_zero = T.eq(y, 0).mean() 
+#            gain_zero = T.cast(gain_zero, config.floatX)
+#            rval['gain_zero'] = gain_zero
+#            
+#            gain_pos_pred = (y_hat > 0).mean() 
+#            gain_pos_pred = T.cast(gain_pos_pred, config.floatX)
+#            rval['gain_pos_pred'] = gain_pos_pred
+#            gain_neg_pred = (y_hat < 0).mean() 
+#            gain_neg_pred = T.cast(gain_neg_pred, config.floatX)
+#            rval['gain_neg_pred'] = gain_neg_pred
+#            gain_zero_pred = T.eq(y_hat, 0).mean() 
+#            gain_zero_pred = T.cast(gain_zero_pred, config.floatX)
+#            rval['gain_zero_pred'] = gain_zero_pred
+        
+        return rval
+    
         rval = OrderedDict([('row_norms_min',  row_norms.min()),
                             ('row_norms_mean', row_norms.mean()),
                             ('row_norms_max',  row_norms.max()),

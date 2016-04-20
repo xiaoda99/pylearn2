@@ -12,21 +12,41 @@ import numpy as np
 #pred_len = int(sys.argv[5])
 #pred_interval = int(sys.argv[6])
 
+#test = CloudFlowHD(
+#                 which_set = 'test',
+#                 examples_large = 400000,
+#                 threshold = 3,
+#                 tsmooth_win = 1,
+#                 clip_shape = [6, 49, 49],
+#                 ds_shape = [2, 4, 4],
+#                 mean_tds = 0,
+#                 pred_len = 20,
+#                 interval_len = 5,
+#                 examples_per_image = 5,
+#                 sample_prob = 1.,
+#                 test_mode = True
+#    )
+
 test = CloudFlowHD(
-                 which_set = 'test',
-                 examples_large = 400000,
+                 which_set = 'train',
+                 examples_large = 100000,
                  threshold = 3,
                  tsmooth_win = 1,
-                 clip_shape = [6, 49, 49],
-                 ds_shape = [2, 4, 4],
+                 clip_shape = [6, 17, 17],
+                 ds_shape = [2, 1, 1],
                  mean_tds = 0,
                  pred_len = 20,
                  interval_len = 5,
-                 examples_per_image = 5,
+                 tstride = 1,
+                 examples_per_image = 800,
+                 video_shape = (1800, 1066, 1000),
+                 image_border=(40, 40),
+                 train_slot=85,   # 17 hours
+                 valid_slot=30,   # 6 hours
+                 test_slot=40,   # 8 hours
                  sample_prob = 1.,
                  test_mode = True
     )
-
 #test.test_flow()
 
 def show_random_examples():

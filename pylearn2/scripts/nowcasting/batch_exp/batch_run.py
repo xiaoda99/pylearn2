@@ -708,6 +708,38 @@ hyperparams_list = [
     ('gpu', OrderedDict([('mtds', 0), ('i', 3)])),
 ]
 
+base = '4out_delay'
+hyperparams_list = [
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 0), ('delay', 0)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 1), ('delay', 0)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 2), ('delay', 0)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 3), ('delay', 0)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 0), ('delay', 1)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 1), ('delay', 1)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 2), ('delay', 1)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 3), ('delay', 1)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 0), ('delay', 2)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 1), ('delay', 2)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 2), ('delay', 2)])),
+#    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 3), ('delay', 2)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 0), ('delay', 3)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 1), ('delay', 3)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 2), ('delay', 3)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 3), ('delay', 3)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 0), ('delay', 4)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 1), ('delay', 4)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 2), ('delay', 4)])),
+    ('gpu', OrderedDict([('clip', s([6,49,49])), ('ds', s([2,4,4])), ('mtds', 0), ('nvis', 432), ('i', 3), ('delay', 4)])),
+]
+
+base = '4out_countrywide'
+hyperparams_list = [
+    ('gpu', OrderedDict([('clip', s([6,17,17])), ('ds', s([2,1,1])), ('mtds', 0), ('nvis', 867), ('i', 0), ('delay', 0)])),
+    ('gpu', OrderedDict([('clip', s([6,17,17])), ('ds', s([2,1,1])), ('mtds', 0), ('nvis', 867), ('i', 1), ('delay', 0)])),
+    ('gpu', OrderedDict([('clip', s([6,17,17])), ('ds', s([2,1,1])), ('mtds', 0), ('nvis', 867), ('i', 2), ('delay', 0)])),
+    ('gpu', OrderedDict([('clip', s([6,17,17])), ('ds', s([2,1,1])), ('mtds', 0), ('nvis', 867), ('i', 3), ('delay', 0)])),
+]
+
 from subprocess import call
                       
 if __name__ == "__main__":

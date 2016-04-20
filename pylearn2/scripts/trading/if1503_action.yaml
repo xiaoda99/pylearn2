@@ -1,0 +1,63 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.if_monthly.IFMonthlyAction {
+        direction: 'sell',
+        which_set: 'train'
+    },
+    model: !obj:pylearn2.models.mlp.MLP {
+        layers: [
+                 !obj:pylearn2.models.mlp.PretrainedLayer {
+                     layer_name: 'h0pt',
+                     layer_content: !pkl: "if1503_long_T1_31x3-64-32.pkl",
+                     freeze_params: True
+                 },
+                 !obj:pylearn2.models.mlp.Softmax {
+                     max_col_norm: 9.9365,
+                     layer_name: 'y',
+                     n_classes: 3,
+                     irange: .005
+                 }
+                ],
+        nvis: 93,
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: 512,
+        learning_rate: .01,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: .5,
+        },
+        train_iteration_mode: 'even_shuffled_sequential',
+        monitor_iteration_mode: 'even_sequential',
+        monitoring_dataset:
+            {
+                'train' : *train,
+                'test'  : !obj:pylearn2.datasets.if_monthly.IFMonthlyAction {
+                              direction: 'sell',
+                              which_set: 'test',
+                          }
+            },
+        cost: !obj:pylearn2.costs.cost.SumOfCosts { costs: [
+            !obj:pylearn2.costs.cost.MethodCost {
+                method: 'cost_from_X'
+            },
+            ]
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.MonitorBased {
+            channel_name: "test_y_misclass",
+            prop_decrease: 0.,
+            N: 10
+        },
+    },
+    extensions: [
+        !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+             channel_name: 'test_y_misclass',
+             save_path: "${PYLEARN2_TRAIN_FILE_FULL_STEM}_sell_best.pkl"
+        },
+        !obj:pylearn2.training_algorithms.learning_rule.MomentumAdjustor {
+            start: 1,
+            saturate: 250,
+            final_momentum: .7
+        }
+    ],
+    save_path: "${PYLEARN2_TRAIN_FILE_FULL_STEM}_sell.pkl",
+    save_freq: 1
+}
